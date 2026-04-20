@@ -20,5 +20,18 @@ services:
       timeout: 5s
       retries: 5
 
+# --- TEMPORAL: adminer para verificacion de la DB durante evaluacion ----------
+# Eliminar este servicio cuando ya no sea necesario para revision academica.
+# El desarrollador tiene Adminer corriendo en un contenedor propio.
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+# ------------------------------------------------------------------------------
+
 volumes:
   mariadb_data:
