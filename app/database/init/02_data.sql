@@ -10,7 +10,7 @@ USE tienda_db;
 SET NAMES utf8mb4;
 
 -- ============================================================
--- Rol (tabla de catalogo, 3 valores fijos)
+-- Rol (3 valores fijos)
 -- ============================================================
 
 INSERT INTO Rol (id, detalle) VALUES
@@ -19,40 +19,22 @@ INSERT INTO Rol (id, detalle) VALUES
 (3, 'cliente');
 
 -- ============================================================
--- Categoria (27 generos musicales)
+-- Categoria (7 entradas — etiqueta comercial del producto físico)
+-- Clasifica COMO se vende, no qué música contiene.
+-- Los géneros musicales viven en la tabla Genero.
 -- ============================================================
 
 INSERT INTO Categoria (id, detalle) VALUES
-( 1, 'Thrash Metal'),
-( 2, 'Progressive Rock'),
-( 3, 'Indie Rock'),
-( 4, 'Grunge'),
-( 5, 'Alternative Rock'),
-( 6, 'Alternative Metal'),
-( 7, 'Shoegaze'),
-( 8, 'Heavy Metal'),
-( 9, 'Progressive Metal'),
-(10, 'Indie Pop'),
-(11, 'Post-Hardcore'),
-(12, 'Math Rock'),
-(13, 'Art Rock'),
-(14, 'Dream Pop'),
-(15, 'Post-Punk'),
-(16, 'Blackgaze'),
-(17, 'Hard Rock'),
-(18, 'Punk Rock'),
-(19, 'Electronic Rock'),
-(20, 'Folk Rock'),
-(21, 'Blues Rock'),
-(22, 'Classic Rock'),
-(23, 'Nu Metal'),
-(24, 'Doom Metal'),
-(25, 'Stoner Rock'),
-(26, 'Post-Rock'),
-(27, 'Psychedelic Rock');
+(1, 'Nuevo — Sellado'),
+(2, 'Nuevo — Sin Celofán'),
+(3, 'Usado — Excelente Estado'),
+(4, 'Usado — Buen Estado'),
+(5, 'Importado'),
+(6, 'Edición Especial'),
+(7, 'Outlet / Liquidación');
 
 -- ============================================================
--- Proveedor (27 distribuidoras discograficas)
+-- Proveedor (27 distribuidoras discográficas)
 -- ============================================================
 
 INSERT INTO Proveedor (id, nombre) VALUES
@@ -85,19 +67,86 @@ INSERT INTO Proveedor (id, nombre) VALUES
 (27, 'Captured Tracks');
 
 -- ============================================================
+-- Artista (20 artistas)
+-- ============================================================
+
+INSERT INTO Artista (id, nombre) VALUES
+( 1, 'Metallica'),
+( 2, 'Pink Floyd'),
+( 3, 'The Strokes'),
+( 4, 'Alice in Chains'),
+( 5, 'The Smashing Pumpkins'),
+( 6, 'Slowdive'),
+( 7, 'My Bloody Valentine'),
+( 8, 'Rush'),
+( 9, 'The Smiths'),
+(10, 'Deftones'),
+(11, 'Radiohead'),
+(12, 'Black Sabbath'),
+(13, 'Tool'),
+(14, 'Soundgarden'),
+(15, 'Nirvana'),
+(16, 'The Cure'),
+(17, 'Cocteau Twins'),
+(18, 'Deafheaven'),
+(19, 'American Football'),
+(20, 'Black Country New Road');
+
+-- ============================================================
+-- Album_Tipo (4 formatos físicos)
+-- ============================================================
+
+INSERT INTO Album_Tipo (id, detalle) VALUES
+(1, 'Vinilo'),
+(2, 'CD'),
+(3, 'Cassette'),
+(4, 'Edición Limitada');
+
+-- ============================================================
+-- Genero (27 géneros musicales — clasificación del álbum)
+-- ============================================================
+
+INSERT INTO Genero (id, detalle) VALUES
+( 1, 'Thrash Metal'),
+( 2, 'Progressive Rock'),
+( 3, 'Indie Rock'),
+( 4, 'Grunge'),
+( 5, 'Alternative Rock'),
+( 6, 'Alternative Metal'),
+( 7, 'Shoegaze'),
+( 8, 'Heavy Metal'),
+( 9, 'Progressive Metal'),
+(10, 'Indie Pop'),
+(11, 'Post-Hardcore'),
+(12, 'Math Rock'),
+(13, 'Art Rock'),
+(14, 'Dream Pop'),
+(15, 'Post-Punk'),
+(16, 'Blackgaze'),
+(17, 'Hard Rock'),
+(18, 'Punk Rock'),
+(19, 'Electronic Rock'),
+(20, 'Folk Rock'),
+(21, 'Blues Rock'),
+(22, 'Classic Rock'),
+(23, 'Nu Metal'),
+(24, 'Doom Metal'),
+(25, 'Stoner Rock'),
+(26, 'Post-Rock'),
+(27, 'Psychedelic Rock');
+
+-- ============================================================
 -- Persona (53 filas)
 -- IDs  1- 3 : admin
 -- IDs  4-28 : vendedor
 -- IDs 29-53 : cliente
--- Todas las contrasenas son el hash bcrypt de "secret"
+-- Contraseña seed: "secret" — hash bcrypt cost 12
 -- ============================================================
 
 INSERT INTO Persona (id, nombre, correo, contrasena, id_rol) VALUES
--- Admins
 ( 1, 'Diego Calderón',      'diego.admin@tiendamusical.gt',       '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1),
 ( 2, 'Marcela Gatica',      'marce.admin@tiendamusical.gt',       '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1),
-( 3, 'Max Apolo',           'max.admin@tiendamusical.gt',      '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1),
--- Vendedores
+( 3, 'Max Apolo',           'max.admin@tiendamusical.gt',         '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1),
 ( 4, 'Ana López',           'ana.lopez@tiendamusical.gt',         '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2),
 ( 5, 'Roberto Pérez',       'roberto.perez@tiendamusical.gt',     '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2),
 ( 6, 'Sofía Ramírez',       'sofia.ramirez@tiendamusical.gt',     '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2),
@@ -123,7 +172,6 @@ INSERT INTO Persona (id, nombre, correo, contrasena, id_rol) VALUES
 (26, 'Patricia Molina',     'patricia.molina@tiendamusical.gt',   '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2),
 (27, 'Ricardo Salazar',     'ricardo.salazar@tiendamusical.gt',   '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2),
 (28, 'Gabriela Espinoza',   'gabriela.espinoza@tiendamusical.gt', '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2),
--- Clientes
 (29, 'Javier Alvarado',     'javier.alvarado@gmail.com',          '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 3),
 (30, 'Mariana Pineda',      'mariana.pineda@gmail.com',           '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 3),
 (31, 'Kevin Estrada',       'kevin.estrada@hotmail.com',          '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 3),
@@ -152,7 +200,7 @@ INSERT INTO Persona (id, nombre, correo, contrasena, id_rol) VALUES
 
 -- ============================================================
 -- Empleado (28 filas — Personas 1-28)
--- DPIs ficticios de 13 digitos (formato Guatemala)
+-- DPIs ficticios de 13 dígitos (formato Guatemala)
 -- ============================================================
 
 INSERT INTO Empleado (id, id_persona, DPI) VALUES
@@ -187,7 +235,7 @@ INSERT INTO Empleado (id, id_persona, DPI) VALUES
 
 -- ============================================================
 -- Cliente (25 filas — Personas 29-53)
--- NITs ficticios; algunos usan CF (Consumidor Final)
+-- NITs ficticios; CF = Consumidor Final
 -- ============================================================
 
 INSERT INTO Cliente (id, id_persona, NIT, direccion) VALUES
@@ -218,49 +266,123 @@ INSERT INTO Cliente (id, id_persona, NIT, direccion) VALUES
 (25, 53, '8090123-4',  'Zona 13, Guatemala City');
 
 -- ============================================================
--- Producto (30 albumes legendarios — discos y vinilos)
--- Precios en Quetzales guatemaltecos (Q)
--- Categoria y Proveedor referenciados por ID
--- Nota: el formato (Vinilo/CD) se registrara en una entidad
--- separada en una version futura del esquema.
+-- Album (30 álbumes)
+-- url_portada: obtenida de la iTunes Search API (artworkUrl100).
+-- El campo es VARCHAR(1024); NULL en seed donde la URL no está
+-- disponible — el backend la puebla vía iTunes al crear/editar.
+-- anio es tipo YEAR de MariaDB (1 byte, rango 1901-2155).
 -- ============================================================
 
-INSERT INTO Producto (id, nombre, precio, stock, id_categoria, id_proveedor) VALUES
-( 1, 'Master of Puppets - Metallica (Vinilo)',                  285.00,  8,  1, 13),
-( 2, '...And Justice for All - Metallica (CD)',                 125.00, 15,  1, 13),
-( 3, 'The Dark Side of the Moon - Pink Floyd (Vinilo)',         390.00,  5,  2,  4),
-( 4, 'Wish You Were Here - Pink Floyd (Vinilo)',                360.00,  6,  2,  4),
-( 5, 'Animals - Pink Floyd (CD)',                               118.00, 12,  2,  4),
-( 6, 'Is This It - The Strokes (Vinilo)',                       295.00,  9,  3, 16),
-( 7, 'Room on Fire - The Strokes (CD)',                         108.00, 20,  3, 16),
-( 8, 'Dirt - Alice in Chains (Vinilo)',                         298.00,  7,  4, 16),
-( 9, 'Siamese Dream - The Smashing Pumpkins (Vinilo)',          315.00,  6,  5,  4),
-(10, 'Souvlaki - Slowdive (Vinilo)',                            335.00,  4,  7, 21),
-(11, 'Loveless - My Bloody Valentine (Vinilo)',                 425.00,  3,  7, 20),
-(12, 'Isn''t Anything - My Bloody Valentine (CD)',             132.00, 11,  7, 20),
-(13, 'Moving Pictures - Rush (CD)',                             115.00, 18,  2, 17),
-(14, '2112 - Rush (Vinilo)',                                    275.00,  7,  2, 17),
-(15, 'The Queen Is Dead - The Smiths (Vinilo)',                 345.00,  5, 10,  8),
-(16, 'White Pony - Deftones (CD)',                              128.00, 14,  6,  3),
-(17, 'OK Computer - Radiohead (Vinilo)',                        398.00,  4,  5, 24),
-(18, 'Kid A - Radiohead (CD)',                                  138.00, 16, 19, 24),
-(19, 'The Bends - Radiohead (CD)',                              115.00, 19,  5, 24),
-(20, 'Paranoid - Black Sabbath (Vinilo)',                       312.00,  8,  8,  3),
-(21, 'Lateralus - Tool (CD)',                                   148.00, 13,  9,  1),
-(22, 'Aenima - Tool (CD)',                                      142.00, 11,  9,  1),
-(23, 'Superunknown - Soundgarden (Vinilo)',                     318.00,  6,  4,  1),
-(24, 'Nevermind - Nirvana (Vinilo)',                            298.00,  9,  4,  9),
-(25, 'In Utero - Nirvana (CD)',                                 118.00, 17,  4,  9),
-(26, 'Disintegration - The Cure (Vinilo)',                      362.00,  5, 15,  1),
-(27, 'Heaven or Las Vegas - Cocteau Twins (Vinilo)',            375.00,  4, 14, 22),
-(28, 'Sunbather - Deafheaven (CD)',                             112.00, 15, 16,  8),
-(29, 'American Football LP1 - American Football (Vinilo)',      328.00,  6, 12, 27),
-(30, 'Ants from Up There - Black Country New Road (CD)',        132.00, 13, 13, 23);
+INSERT INTO Album (id, titulo, anio, url_portada, track_count, id_artista) VALUES
+( 1, 'Master of Puppets',         1986, 'https://upload.wikimedia.org/wikipedia/en/b/b2/Metallica_-_Master_of_Puppets_cover.jpg', 8,  1),
+( 2, '...And Justice for All',    1988,  NULL,                                                                                    9,  1),
+( 3, 'The Dark Side of the Moon', 1973, 'https://upload.wikimedia.org/wikipedia/en/3/3b/Dark_Side_of_the_Moon.png',              10,  2),
+( 4, 'Wish You Were Here',        1975, 'https://upload.wikimedia.org/wikipedia/en/a/a6/Pink_Floyd_-_Wish_You_Were_Here.png',     5,  2),
+( 5, 'Animals',                   1977,  NULL,                                                                                    5,  2),
+( 6, 'Is This It',                2001,  NULL,                                                                                   11,  3),
+( 7, 'Room on Fire',              2003,  NULL,                                                                                   11,  3),
+( 8, 'Dirt',                      1992,  NULL,                                                                                   13,  4),
+( 9, 'Siamese Dream',             1993, 'https://upload.wikimedia.org/wikipedia/en/d/db/Siamese-dream.jpg',                      13,  5),
+(10, 'Souvlaki',                  1994,  NULL,                                                                                    9,  6),
+(11, 'Loveless',                  1991, 'https://upload.wikimedia.org/wikipedia/en/0/0c/My_Bloody_Valentine_-_Loveless.png',     11,  7),
+(12, 'Isn''t Anything',           1988,  NULL,                                                                                   11,  7),
+(13, 'Moving Pictures',           1981,  NULL,                                                                                    7,  8),
+(14, '2112',                      1976,  NULL,                                                                                    7,  8),
+(15, 'The Queen Is Dead',         1986, 'https://upload.wikimedia.org/wikipedia/en/d/de/The_Queen_is_Dead.png',                  10,  9),
+(16, 'White Pony',                2000,  NULL,                                                                                   12, 10),
+(17, 'OK Computer',               1997, 'https://upload.wikimedia.org/wikipedia/en/b/ba/Radioheadokcomputer.png',                12, 11),
+(18, 'Kid A',                     2000, 'https://upload.wikimedia.org/wikipedia/en/b/b5/Radiohead.kid_a.jpg',                   10, 11),
+(19, 'The Bends',                 1995,  NULL,                                                                                   12, 11),
+(20, 'Paranoid',                  1970, 'https://upload.wikimedia.org/wikipedia/en/7/74/Paranoid_-_Black_Sabbath.jpeg',          8, 12),
+(21, 'Lateralus',                 2001, 'https://upload.wikimedia.org/wikipedia/en/a/a0/Tool_-_Lateralus.jpg',                  13, 13),
+(22, 'Ænima',                     1996,  NULL,                                                                                   15, 13),
+(23, 'Superunknown',              1994,  NULL,                                                                                   24, 14),
+(24, 'Nevermind',                 1991, 'https://upload.wikimedia.org/wikipedia/en/b/b7/NirvanaNevermindalbumcover.jpg',         13, 15),
+(25, 'In Utero',                  1993,  NULL,                                                                                   12, 15),
+(26, 'Disintegration',            1989,  NULL,                                                                                   12, 16),
+(27, 'Heaven or Las Vegas',       1990,  NULL,                                                                                   12, 17),
+(28, 'Sunbather',                 2013,  NULL,                                                                                    8, 18),
+(29, 'American Football LP1',     1999,  NULL,                                                                                    8, 19),
+(30, 'Ants from Up There',        2022,  NULL,                                                                                   11, 20);
 
 -- ============================================================
--- Compra (30 filas — fechas entre marzo 2025 y noviembre 2025)
--- id_empleado referencia Empleado.id (1-28)
--- id_cliente  referencia Cliente.id  (1-25)
+-- Album_Genero (N:M — 1 o 2 géneros por álbum)
+-- ============================================================
+
+INSERT INTO Album_Genero (id_album, id_genero) VALUES
+( 1,  1), ( 1,  8),   -- Master of Puppets       : Thrash Metal, Heavy Metal
+( 2,  1), ( 2,  8),   -- ...And Justice for All  : Thrash Metal, Heavy Metal
+( 3,  2), ( 3, 13),   -- Dark Side of the Moon   : Progressive Rock, Art Rock
+( 4,  2), ( 4, 13),   -- Wish You Were Here      : Progressive Rock, Art Rock
+( 5,  2), ( 5, 27),   -- Animals                 : Progressive Rock, Psychedelic Rock
+( 6,  3), ( 6, 18),   -- Is This It               : Indie Rock, Punk Rock
+( 7,  3),             -- Room on Fire             : Indie Rock
+( 8,  4), ( 8,  6),   -- Dirt                    : Grunge, Alternative Metal
+( 9,  5), ( 9,  7),   -- Siamese Dream            : Alternative Rock, Shoegaze
+(10,  7), (10, 14),   -- Souvlaki                : Shoegaze, Dream Pop
+(11,  7), (11,  5),   -- Loveless                : Shoegaze, Alternative Rock
+(12,  7), (12,  5),   -- Isn't Anything          : Shoegaze, Alternative Rock
+(13,  2), (13, 17),   -- Moving Pictures         : Progressive Rock, Hard Rock
+(14,  2), (14, 17),   -- 2112                    : Progressive Rock, Hard Rock
+(15, 10), (15, 15),   -- The Queen Is Dead       : Indie Pop, Post-Punk
+(16,  6), (16, 23),   -- White Pony              : Alternative Metal, Nu Metal
+(17,  5), (17, 13),   -- OK Computer             : Alternative Rock, Art Rock
+(18, 19), (18, 13),   -- Kid A                   : Electronic Rock, Art Rock
+(19,  5), (19,  3),   -- The Bends               : Alternative Rock, Indie Rock
+(20,  8), (20, 24),   -- Paranoid                : Heavy Metal, Doom Metal
+(21,  9), (21,  6),   -- Lateralus               : Progressive Metal, Alternative Metal
+(22,  6), (22,  9),   -- Ænima                   : Alternative Metal, Progressive Metal
+(23,  4), (23,  5),   -- Superunknown            : Grunge, Alternative Rock
+(24,  4), (24,  5),   -- Nevermind               : Grunge, Alternative Rock
+(25,  4), (25,  5),   -- In Utero                : Grunge, Alternative Rock
+(26, 15), (26, 14),   -- Disintegration          : Post-Punk, Dream Pop
+(27, 14), (27,  7),   -- Heaven or Las Vegas     : Dream Pop, Shoegaze
+(28, 16), (28, 26),   -- Sunbather               : Blackgaze, Post-Rock
+(29, 12), (29, 26),   -- American Football LP1   : Math Rock, Post-Rock
+(30, 26), (30, 13);   -- Ants from Up There      : Post-Rock, Art Rock
+
+-- ============================================================
+-- Producto (30 filas) — precio en Quetzales (Q)
+-- id_categoria referencia Categoria (condición/estado comercial):
+--   1 Nuevo-Sellado  2 Nuevo-Sin Celofán  3 Usado-Excelente
+--   4 Usado-Buen Estado  5 Importado  6 Edición Especial  7 Outlet
+-- El nombre se construye en la app: Artista - Titulo (Tipo)
+-- ============================================================
+
+INSERT INTO Producto (id, precio, stock, id_album, id_album_tipo, id_categoria, id_proveedor) VALUES
+( 1, 285.00,  8,  1, 1, 5, 13),  -- Master of Puppets       Vinilo  Importado
+( 2, 125.00, 15,  2, 2, 2, 13),  -- ...And Justice for All  CD      Nuevo-Sin Celofán
+( 3, 390.00,  5,  3, 1, 6,  4),  -- Dark Side of the Moon   Vinilo  Edición Especial
+( 4, 360.00,  6,  4, 1, 5,  4),  -- Wish You Were Here      Vinilo  Importado
+( 5, 118.00, 12,  5, 2, 7,  4),  -- Animals                 CD      Outlet/Liquidación
+( 6, 295.00,  9,  6, 1, 5, 16),  -- Is This It              Vinilo  Importado
+( 7, 108.00, 20,  7, 2, 4, 16),  -- Room on Fire            CD      Usado-Buen Estado
+( 8, 298.00,  7,  8, 1, 3, 16),  -- Dirt                    Vinilo  Usado-Excelente
+( 9, 315.00,  6,  9, 1, 5,  4),  -- Siamese Dream           Vinilo  Importado
+(10, 335.00,  4, 10, 1, 6, 21),  -- Souvlaki                Vinilo  Edición Especial
+(11, 425.00,  3, 11, 1, 6, 20),  -- Loveless                Vinilo  Edición Especial
+(12, 132.00, 11, 12, 2, 1, 20),  -- Isn't Anything          CD      Nuevo-Sellado
+(13, 115.00, 18, 13, 2, 1, 17),  -- Moving Pictures         CD      Nuevo-Sellado
+(14, 275.00,  7, 14, 1, 5, 17),  -- 2112                    Vinilo  Importado
+(15, 345.00,  5, 15, 1, 3,  8),  -- The Queen Is Dead       Vinilo  Usado-Excelente
+(16, 128.00, 14, 16, 2, 2,  3),  -- White Pony              CD      Nuevo-Sin Celofán
+(17, 398.00,  4, 17, 1, 6, 24),  -- OK Computer             Vinilo  Edición Especial
+(18, 138.00, 16, 18, 2, 1, 24),  -- Kid A                   CD      Nuevo-Sellado
+(19, 115.00, 19, 19, 2, 2, 24),  -- The Bends               CD      Nuevo-Sin Celofán
+(20, 312.00,  8, 20, 1, 5,  3),  -- Paranoid                Vinilo  Importado
+(21, 148.00, 13, 21, 2, 1,  1),  -- Lateralus               CD      Nuevo-Sellado
+(22, 142.00, 11, 22, 2, 2,  1),  -- Ænima                   CD      Nuevo-Sin Celofán
+(23, 318.00,  6, 23, 1, 5,  1),  -- Superunknown            Vinilo  Importado
+(24, 298.00,  9, 24, 1, 5,  9),  -- Nevermind               Vinilo  Importado
+(25, 118.00, 17, 25, 2, 2,  9),  -- In Utero                CD      Nuevo-Sin Celofán
+(26, 362.00,  5, 26, 1, 6,  1),  -- Disintegration          Vinilo  Edición Especial
+(27, 375.00,  4, 27, 1, 4, 22),  -- Heaven or Las Vegas     Vinilo  Usado-Buen Estado
+(28, 112.00, 15, 28, 2, 7,  8),  -- Sunbather               CD      Outlet/Liquidación
+(29, 328.00,  6, 29, 1, 6, 27),  -- American Football LP1   Vinilo  Edición Especial
+(30, 132.00, 13, 30, 2, 2, 23);  -- Ants from Up There      CD      Nuevo-Sin Celofán
+
+-- ============================================================
+-- Compra (30 filas — marzo a noviembre 2025)
 -- ============================================================
 
 INSERT INTO Compra (id, id_cliente, id_empleado, fecha) VALUES
@@ -297,46 +419,33 @@ INSERT INTO Compra (id, id_cliente, id_empleado, fecha) VALUES
 
 -- ============================================================
 -- DetalleVenta (40 filas)
--- Compras 1-10 llevan 2 productos; compras 11-30 llevan 1.
+-- Compras 1-10: 2 productos cada una. Compras 11-30: 1 producto.
 -- precio_unitario es snapshot del precio en el momento de la venta.
--- PK compuesta (id_compra, id_producto) — no se repite un producto
--- en la misma compra.
 -- ============================================================
 
 INSERT INTO DetalleVenta (id_compra, id_producto, cantidad, precio_unitario) VALUES
--- Compra 1: Master of Puppets Vinilo + Dark Side of the Moon Vinilo
 ( 1,  1, 1, 285.00),
 ( 1,  3, 1, 390.00),
--- Compra 2: OK Computer Vinilo + Loveless Vinilo
 ( 2, 17, 1, 398.00),
 ( 2, 11, 1, 425.00),
--- Compra 3: Nevermind Vinilo + Lateralus CD
 ( 3, 24, 1, 298.00),
 ( 3, 21, 1, 148.00),
--- Compra 4: Souvlaki Vinilo + The Queen Is Dead Vinilo
 ( 4, 10, 1, 335.00),
 ( 4, 15, 1, 345.00),
--- Compra 5: Disintegration Vinilo + Paranoid Vinilo
 ( 5, 26, 1, 362.00),
 ( 5, 20, 1, 312.00),
--- Compra 6: Siamese Dream Vinilo + Is This It Vinilo
 ( 6,  9, 1, 315.00),
 ( 6,  6, 1, 295.00),
--- Compra 7: Heaven or Las Vegas Vinilo + 2112 Vinilo
 ( 7, 27, 1, 375.00),
 ( 7, 14, 1, 275.00),
--- Compra 8: American Football LP1 Vinilo + And Justice for All CD
 ( 8, 29, 1, 328.00),
 ( 8,  2, 1, 125.00),
--- Compra 9: White Pony CD + Ants from Up There CD
 ( 9, 16, 1, 128.00),
 ( 9, 30, 1, 132.00),
--- Compra 10: Aenima CD + Kid A CD
 (10, 22, 1, 142.00),
 (10, 18, 1, 138.00),
--- Compras 11-30: un producto cada una
 (11,  3, 1, 390.00),
-(12,  1, 2, 285.00),  -- 2 copias de Master of Puppets (regalo)
+(12,  1, 2, 285.00),
 (13, 17, 1, 398.00),
 (14, 11, 1, 425.00),
 (15, 24, 1, 298.00),
@@ -349,7 +458,7 @@ INSERT INTO DetalleVenta (id_compra, id_producto, cantidad, precio_unitario) VAL
 (22, 19, 1, 115.00),
 (23, 23, 1, 318.00),
 (24,  8, 1, 298.00),
-(25, 12, 2, 132.00),  -- 2 copias de Isn't Anything CD
+(25, 12, 2, 132.00),
 (26, 29, 1, 328.00),
 (27,  7, 1, 108.00),
 (28, 13, 1, 115.00),
