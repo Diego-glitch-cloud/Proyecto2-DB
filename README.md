@@ -22,8 +22,8 @@ La base de datos está diseñada en **MariaDB 11.4**, normalizada hasta **3FN**,
 | DDL (`01_schema.sql`) — tablas, FKs, índices, vista | ✅ Completo |
 | Datos de prueba (`02_data.sql`) — ≥25 filas por tabla | ✅ Completo |
 | Docker Compose (MariaDB 11.4) | ✅ Completo |
-| Backend | ⏳ Por implementar |
-| Frontend | ⏳ Por implementar |
+| Backend (Fastify + Node.js) | ⏳ Por implementar |
+| Frontend (Vue 3 + Vite + PrimeVue) | ⏳ Por implementar |
 | Autenticación JWT | ⏳ Por implementar |
 | CRUD de entidades en la UI | ⏳ Por implementar |
 | Consultas SQL avanzadas (JOINs, CTEs, subqueries) | ⏳ Por implementar |
@@ -51,6 +51,18 @@ Los documentos de diseño de la base de datos se encuentran en la carpeta [`docs
 
 ---
 
+## Stack tecnológico
+
+| Capa | Tecnología | Justificación |
+|---|---|---|
+| Base de datos | MariaDB 11.4 | Eficiencia en baja escala, gestión de credenciales vía variables de entorno, soporte nativo de SQL explícito |
+| Backend | Fastify + Node.js | Alto rendimiento en procesamiento de peticiones, arquitectura modular por plugins, validación nativa con JSON Schema |
+| Frontend | Vue 3 + Vite | Entorno de desarrollo ultra rápido, aplicación final ligera |
+| Estado global | Pinia | Simplicidad y compatibilidad con la Composition API de Vue 3 |
+| Componentes UI | PrimeVue | Librería de componentes preconstruidos (tablas, formularios) que acelera los módulos administrativos y reportes |
+
+---
+
 ## Estructura del proyecto
 
 ```
@@ -60,8 +72,8 @@ Proyecto2-DB/
 │   │   └── init/
 │   │       ├── 01_schema.sql   # DDL: tablas, índices, vista
 │   │       └── 02_data.sql     # Seed: ≥25 filas por tabla
-│   ├── backend/                # Por implementar
-│   └── frontend/               # Por implementar
+│   ├── backend/                # Fastify + Node.js (por implementar)
+│   └── frontend/               # Vue 3 + Vite + PrimeVue (por implementar)
 ├── docs/
 │   ├── DER-PY2.png
 │   ├── modelo-relacional.png
@@ -151,21 +163,41 @@ docker compose down -v && docker compose up
 
 ## Esquema de la base de datos
 
-El modelo está normalizado en **3FN** con 9 tablas:
+El modelo está normalizado en **3FN** con 14 tablas. Posterior a los avances iniciales el esquema fue extendido para modelar correctamente una tienda musical, agregando entidades de catálogo (`Artista`, `Album`, `Genero`, `Album_Tipo`, `Album_Genero`) y refactorizando `Producto` para referenciarlas.
 
 ```
-Rol          (id, detalle)
-Persona      (id, nombre, correo, contrasena, id_rol →Rol)
-Empleado     (id, id_persona →Persona, DPI)
-Cliente      (id, id_persona →Persona, NIT, direccion)
-Categoria    (id, detalle)
-Proveedor    (id, nombre)
-Producto     (id, nombre, precio, stock, id_categoria →Categoria, id_proveedor →Proveedor)
-Compra       (id, id_cliente →Cliente, id_empleado →Empleado, fecha)
-DetalleVenta (id_compra →Compra, id_producto →Producto, cantidad, precio_unitario)
+-- Roles y acceso
+Rol           (id, detalle)                                              -- 'admin' | 'vendedor' | 'cliente'
+Persona       (id, nombre, correo, contrasena, id_rol →Rol)
+
+-- Usuarios del sistema
+Cliente       (id, id_persona →Persona, NIT, direccion)
+Empleado      (id, id_persona →Persona, DPI)
+
+-- Catálogo musical
+Artista       (id, nombre)
+Genero        (id, detalle)
+Album_Tipo    (id, detalle)                                              -- 'CD' | 'Vinilo'
+Album         (id, titulo, anio, url_portada, track_count, id_artista →Artista)
+Album_Genero  (id_album →Album, id_genero →Genero)                      -- PK compuesta, N:M
+
+-- Inventario
+Categoria     (id, detalle)
+Proveedor     (id, nombre)
+Producto      (id, precio, stock, id_album →Album, id_album_tipo →Album_Tipo,
+               id_categoria →Categoria, id_proveedor →Proveedor)
+
+-- Ventas
+Compra        (id, fecha, id_cliente →Cliente, id_empleado →Empleado)
+DetalleVenta  (id_compra →Compra, id_producto →Producto,               -- PK compuesta
+               cantidad, precio_unitario)
 ```
 
 Decisiones de diseño relevantes:
+- **`Artista` / `Album`** normalizan los metadatos musicales — evitan repetir el nombre del artista en cada producto y permiten consultas por catálogo.
+- **`Album_Genero`** resuelve la cardinalidad N:M (un álbum puede tener varios géneros).
+- **`Album_Tipo`** separa el formato físico (CD / Vinilo) como entidad, en lugar de codificarlo en el nombre del producto.
+- **`Producto`** ya no tiene campo `nombre`; la identidad del producto se deriva de `Album` + `Album_Tipo`.
 - **`stock`** vive en `Producto` (relación 1:1 con Stock colapsada en normalización).
 - **`precio_unitario`** en `DetalleVenta` es un snapshot histórico copiado al momento de la venta, no derivado de `Producto.precio`.
 - **`Persona`** centraliza correo, contraseña y rol para soportar el login tanto de clientes como de empleados.
