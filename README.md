@@ -21,9 +21,9 @@ La base de datos está diseñada en **MariaDB 11.4**, normalizada hasta **3FN**,
 | Normalización documentada (3FN) | ✅ Completo |
 | DDL (`01_schema.sql`) — tablas, FKs, índices, vista | ✅ Completo |
 | Datos de prueba (`02_data.sql`) — ≥25 filas por tabla | ✅ Completo |
-| Docker Compose (MariaDB 11.4) | ✅ Completo |
-| Backend (Fastify + Node.js) | ⏳ Por implementar |
-| Frontend (Vue 3 + Vite + PrimeVue) | ⏳ Por implementar |
+| Docker Compose (DB + Backend + Frontend) | ✅ Completo |
+| Backend (Fastify + Node.js) — scaffold | ✅ Completo |
+| Frontend (Vue 3 + Vite + PrimeVue) — scaffold | ✅ Completo |
 | Autenticación JWT | ⏳ Por implementar |
 | CRUD de entidades en la UI | ⏳ Por implementar |
 | Consultas SQL avanzadas (JOINs, CTEs, subqueries) | ⏳ Por implementar |
@@ -70,18 +70,30 @@ Proyecto2-DB/
 ├── app/
 │   ├── database/
 │   │   └── init/
-│   │       ├── 01_schema.sql   # DDL: tablas, índices, vista
-│   │       └── 02_data.sql     # Seed: ≥25 filas por tabla
-│   ├── backend/                # Fastify + Node.js (por implementar)
-│   └── frontend/               # Vue 3 + Vite + PrimeVue (por implementar)
+│   │       ├── 01_schema.sql        # DDL: tablas, índices, vista
+│   │       └── 02_data.sql          # Seed: ≥25 filas por tabla
+│   ├── backend/
+│   │   ├── src/
+│   │   │   └── index.js             # Servidor Fastify (punto de entrada)
+│   │   ├── Dockerfile
+│   │   └── package.json
+│   └── frontend/
+│       ├── src/
+│       │   ├── App.vue              # Componente raíz
+│       │   └── main.js              # Bootstrap Vue + Pinia + PrimeVue
+│       ├── Dockerfile
+│       ├── index.html
+│       ├── nginx.conf               # SPA routing + proxy /api → backend
+│       ├── vite.config.js
+│       └── package.json
 ├── docs/
 │   ├── DER-PY2.png
 │   ├── modelo-relacional.png
 │   └── PY2-DB.pdf
-├── docker-compose.yml
-├── docker-compose.example.yml
-├── .env
-├── .env.example
+├── docker-compose.yml               # No commiteado (usa .env)
+├── docker-compose.example.yml       # Commiteado — idéntico al real
+├── .env                             # No commiteado — credenciales reales
+├── .env.example                     # Commiteado — lista las variables
 └── README.md
 ```
 
@@ -105,13 +117,9 @@ cd Proyecto2-DB
 
 **2. Configurar las variables de entorno**
 
-Copia el archivo de ejemplo y completa las variables:
+> ⚠️ **Nota de seguridad (contexto académico):** en un proyecto real, el archivo `.env` **nunca** debe subirse al repositorio ni exponerse públicamente, ya que contiene credenciales sensibles. Se hace una excepción aquí — conscientemente y de forma explícita — porque se trata de un proyecto académico de evaluación, y exponer las variables facilita que el cuerpo docente pueda levantar el proyecto sin configuración adicional. **Esta práctica no debe replicarse fuera de contextos académicos y soy consciente de ello.**
 
-```bash
-cp .env.example .env
-```
-
-> ⚠️ **Nota académica:** por tratarse de un proyecto académico, las variables del `.env` se incluyen directamente en este README para facilitar la evaluación y evitar inconvenientes al levantar el contenedor. Somos conscientes de que exponer credenciales en un README representa una vulnerabilidad de seguridad — esta práctica **no debe replicarse en proyectos reales**.
+El repositorio ya incluye el archivo `.env.example` con toda la estructura de los valores necesarios. Si por algún motivo no existe, créalo en la raíz del proyecto con el siguiente contenido:
 
 ```env
 DB_HOST=db
@@ -120,12 +128,27 @@ DB_NAME=tienda_db
 DB_USER=proy2
 DB_PASSWORD=secret
 DB_ROOT_PASSWORD=root_secret
+JWT_SECRET=tienda_musical_jwt_secret_2026
+BACKEND_PORT=3000
+FRONTEND_PORT=80
 ```
+
+| Variable | Descripción |
+|---|---|
+| `DB_HOST` | Nombre del servicio de base de datos en la red Docker (`db`) |
+| `DB_PORT` | Puerto expuesto al host para conectar a MariaDB |
+| `DB_NAME` | Nombre de la base de datos |
+| `DB_USER` | Usuario de la base de datos (fijo por rúbrica: `proy2`) |
+| `DB_PASSWORD` | Contraseña de la base de datos (fijo por rúbrica: `secret`) |
+| `DB_ROOT_PASSWORD` | Contraseña del usuario root de MariaDB |
+| `JWT_SECRET` | Clave secreta para firmar los tokens JWT de autenticación |
+| `BACKEND_PORT` | Puerto en que escucha el backend Fastify (host e interno) |
+| `FRONTEND_PORT` | Puerto del host que sirve el frontend a través de Nginx |
 
 **3. Levantar los contenedores**
 
 ```bash
-docker compose up
+docker compose up --build -d
 ```
 
 Docker inicializará MariaDB y ejecutará automáticamente los scripts de la carpeta `app/database/init/` en orden:
@@ -141,20 +164,32 @@ El `docker-compose.yml` ya incluye un contenedor **Adminer** para facilitar la r
 - **Contraseña:** `secret`
 - **Base de datos:** `tienda_db`
 
+### Servicios y puertos
+
+| Servicio | URL | Descripción |
+|---|---|---|
+| Frontend | `http://localhost:80` | Aplicación Vue 3 servida por Nginx |
+| Backend | `http://localhost:3000` | API REST Fastify |
+| Adminer | `http://localhost:8080` | Administrador visual de la base de datos |
+| MariaDB | `localhost:3306` | Base de datos (acceso directo) |
+
 ### Comandos útiles
 
 ```bash
-# Levantar en segundo plano
-docker compose up -d
+# Levantar (con rebuild de imágenes) en segundo plano
+docker compose up --build -d
 
-# Ver logs de la base de datos
-docker compose logs db
+# Ver logs de todos los servicios
+docker compose logs -f
+
+# Ver logs de un servicio específico
+docker compose logs -f backend
 
 # Detener (conserva los datos)
 docker compose down
 
-# Resetear completamente (borra el volumen y re-ejecuta los scripts)
-docker compose down -v && docker compose up
+# Resetear completamente (borra el volumen y re-ejecuta los scripts de init)
+docker compose down -v && docker compose up --build -d
 ```
 
 > ⚠️ Los scripts de inicialización **solo se ejecutan la primera vez** que el volumen está vacío. Si modificas `01_schema.sql` o `02_data.sql`, debes correr `docker compose down -v` antes de volver a levantar.
