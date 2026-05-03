@@ -171,10 +171,12 @@ CREATE TABLE IF NOT EXISTS Producto (
 -- Ventas
 -- ============================================================
 
+-- id_empleado es NULL en compras online (el cliente compra solo).
+-- En ventas físicas de tienda contiene el id del empleado que registró la compra.
 CREATE TABLE IF NOT EXISTS Compra (
     id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
     id_cliente  INT UNSIGNED NOT NULL,
-    id_empleado INT UNSIGNED NOT NULL,
+    id_empleado INT UNSIGNED     NULL,
     fecha       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_compra_cliente
@@ -259,8 +261,8 @@ SELECT
 FROM        Compra       c
 JOIN        Cliente      cli     ON c.id_cliente    = cli.id
 JOIN        Persona      pe_cli  ON cli.id_persona  = pe_cli.id
-JOIN        Empleado     emp     ON c.id_empleado   = emp.id
-JOIN        Persona      pe_emp  ON emp.id_persona  = pe_emp.id
+LEFT JOIN   Empleado     emp     ON c.id_empleado   = emp.id
+LEFT JOIN   Persona      pe_emp  ON emp.id_persona  = pe_emp.id
 JOIN        DetalleVenta dv      ON c.id            = dv.id_compra
 JOIN        Producto     p       ON dv.id_producto  = p.id
 JOIN        Album        alb     ON p.id_album      = alb.id

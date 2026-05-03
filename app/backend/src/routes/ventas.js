@@ -1,30 +1,33 @@
 'use strict'
 
 const pool = require('../db')
-const requireRol = require('../hooks/authorize')
+const authenticate = require('../hooks/authenticate')
 
 async function ventasRoutes(fastify) {
 
   // ── POST /api/ventas ───────────────────────────────────────────────────────
-  // Registra una compra completa.
-  // Solo vendedores y admins pueden crear ventas
+  // Registra una compra. Acepta dos canales:
   //
-  // Body esperado:
-  //   {
-  //     "id_cliente": 3,
-  //     "items": [
-  //       { "id_producto": 1, "cantidad": 2 },
-  //       { "id_producto": 5, "cantidad": 1 }
-  //     ]
-  //   }
+  //   Canal ONLINE  (rol: cliente)
+  //     El cliente compra para sí mismo desde la web.
+  //     id_cliente   → se resuelve automáticamente desde el JWT
+  //     id_empleado  → NULL (no hay empleado involucrado)
+  //     Body: { items: [...] }
   //
-  // El id_empleado se obtiene del JWT (request.user.id = Persona.id)
+  //   Canal TIENDA  (rol: vendedor | admin)
+  //     Un empleado registra la venta a nombre de un cliente.
+  //     id_empleado  → se resuelve automáticamente desde el JWT
+  //     id_cliente   → debe venir en el body
+  //     Body: { id_cliente: 3, items: [...] }
+  //
+  // Todos los roles autenticados pueden acceder; la lógica interna
+  // bifurca según request.user.rol.
   fastify.post('/api/ventas', {
-    preHandler: requireRol('admin', 'vendedor'),
+    preHandler: authenticate,
     schema: {
       body: {
         type: 'object',
-        required: ['id_cliente', 'items'],
+        required: ['items'],
         properties: {
           id_cliente: { type: 'integer', minimum: 1 },
           items: {
@@ -45,60 +48,73 @@ async function ventasRoutes(fastify) {
       }
     }
   }, async (request, reply) => {
-    const { id_cliente, items } = request.body
-    const idPersonaEmpleado = request.user.id   // Persona.id del vendedor logueado
+    const { items } = request.body
+    const { id: idPersona, rol } = request.user
 
     const conn = await pool.getConnection()
 
     try {
 
-      // ── VALIDACIONES PRE-TRANSACCIÓN ────────────────────────────────────
-      // Verificar que el cliente existe
-      const [[clienteRow]] = await conn.execute(
-        'SELECT EXISTS(SELECT 1 FROM Cliente WHERE id = ?) AS existe',
-        [id_cliente]
-      )
-      if (!clienteRow.existe) {
-        return reply.code(422).send({ error: `No existe ningún cliente con id ${id_cliente}` })
+      // ── RESOLUCIÓN DE id_cliente e id_empleado SEGÚN CANAL ───────────────
+      let id_cliente, id_empleado
+
+      if (rol === 'cliente') {
+        // Canal online: el cliente compra para sí mismo
+        const [[fila]] = await conn.execute(
+          'SELECT id FROM Cliente WHERE id_persona = ?',
+          [idPersona]
+        )
+        if (!fila) {
+          return reply.code(422).send({ error: 'El usuario no tiene perfil de cliente' })
+        }
+        id_cliente  = fila.id
+        id_empleado = null        // compra online → sin empleado
+
+      } else {
+        // Canal tienda: el empleado especifica el cliente en el body
+        if (!request.body.id_cliente) {
+          return reply.code(400).send({ error: 'id_cliente es requerido para ventas en tienda' })
+        }
+        id_cliente = request.body.id_cliente
+
+        const [[clienteRow]] = await conn.execute(
+          'SELECT EXISTS(SELECT 1 FROM Cliente WHERE id = ?) AS existe',
+          [id_cliente]
+        )
+        if (!clienteRow.existe) {
+          return reply.code(422).send({ error: `No existe ningún cliente con id ${id_cliente}` })
+        }
+
+        // Traducir Persona.id → Empleado.id
+        const [[empFila]] = await conn.execute(
+          'SELECT id FROM Empleado WHERE id_persona = ?',
+          [idPersona]
+        )
+        if (!empFila) {
+          return reply.code(422).send({ error: 'El usuario autenticado no tiene registro de empleado' })
+        }
+        id_empleado = empFila.id
       }
 
-      // Traducir Persona.id  Empleado.id
-      const [[empleadoRow]] = await conn.execute(
-        'SELECT id FROM Empleado WHERE id_persona = ?',
-        [idPersonaEmpleado]
-      )
-      if (!empleadoRow) {
-        // Esto solo pasa si alguien con rol vendedor/admin no tiene fila en Empleado
-        return reply.code(422).send({ error: 'El usuario autenticado no tiene registro de empleado' })
-      }
-      const id_empleado = empleadoRow.id
-
-      // ── INICIO DE TRANSACCIÓN ───────────────────────────────────────────
+      // ── INICIO DE TRANSACCIÓN ────────────────────────────────────────────
       await conn.beginTransaction()
 
       // ── PASO 5.2 ─────────────────────────────────────────────────────────
-      // INSERT INTO Compra → obtener id de la compra recién creada (insertId)
+      // INSERT INTO Compra → obtener id_compra (insertId)
       // [se implementará en el siguiente paso]
 
       // ── PASO 5.3 + 5.4 ───────────────────────────────────────────────────
-      // Para cada item:
-      //   1. Verificar stock disponible
-      //   2. INSERT INTO DetalleVenta
-      //   3. UPDATE Producto SET stock = stock - cantidad
-      //   Si el stock es insuficiente → ROLLBACK y respuesta 409
+      // Para cada item: verificar stock, INSERT DetalleVenta, UPDATE stock
       // [se implementará en el siguiente paso]
 
       await conn.commit()
 
-      // Respuesta provisional 
       return reply.code(201).send({ message: 'Transacción iniciada (implementación pendiente)' })
 
     } catch (err) {
-      // Si algo lanzó un error dentro de la transacción, deshacer todo.
       await conn.rollback()
       throw err
     } finally {
-      // Siempre liberar la conexión al pool, con o sin error.
       conn.release()
     }
   })
