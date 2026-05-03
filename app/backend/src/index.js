@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth')
 const catalogosRoutes = require('./routes/catalogos')
 const albumsRoutes = require('./routes/albums')
 const productosRoutes = require('./routes/productos')
+const ventasRoutes    = require('./routes/ventas')
 const pool = require('./db')
 
 const fastify = Fastify({ logger: true })
@@ -24,6 +25,7 @@ fastify.register(authRoutes)
 fastify.register(catalogosRoutes)
 fastify.register(albumsRoutes)
 fastify.register(productosRoutes)
+fastify.register(ventasRoutes)
 
 // ── MANEJADOR GLOBAL DE ERRORES ────────────────────────────────────────────
 fastify.setErrorHandler((error, request, reply) => {
