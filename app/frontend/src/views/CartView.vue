@@ -313,7 +313,8 @@ async function checkout() {
 
 .field-hint { font-size:8px; letter-spacing:.18em; color:var(--mute); margin-top:2px; display:block; }
 .datos-source { display:flex; flex-direction:column; }
-.confirm-item { display:flex; justify-content:space-between; gap:12px; color:var(--mute); font-size:10px; padding:3px 0; }
+/* confirm-item: texto largo de producto — desactivar uppercase y tracking del eyebrow */
+.confirm-item { display:flex; justify-content:space-between; gap:12px; color:var(--mute); font-size:13px; padding:4px 0; text-transform:none; letter-spacing:0; font-weight:400; }
 
 .total-box { display:flex; flex-direction:column; gap:10px; padding-top:14px; }
 .total-row { display:flex; justify-content:space-between; align-items:center; }
@@ -327,8 +328,8 @@ async function checkout() {
   background:var(--paper); padding:36px; max-width:500px; width:100%;
   display:flex; flex-direction:column;
 }
-.confirm-items { display:flex; flex-direction:column; gap:6px; margin-top:16px; }
-.confirm-item { color:var(--mute); font-size:10px; }
+.confirm-items { display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+.confirm-item { color:var(--mute); font-size:14px; text-transform:none; letter-spacing:0; font-weight:400; }
 
 .fade-enter-active, .fade-leave-active { transition:opacity 200ms; }
 .fade-enter-from, .fade-leave-to { opacity:0; }

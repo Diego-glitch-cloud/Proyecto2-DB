@@ -36,6 +36,10 @@ const routes = [
     path:      '/admin/ventas',
     component: () => import('@/views/VentasView.vue'),
     meta:      { requiresAuth: true, roles: ['admin', 'vendedor'] }
+  },
+  {
+    path:      '/:pathMatch(.*)*',
+    component: () => import('@/views/NotFoundView.vue')
   }
 ]
 

@@ -140,10 +140,21 @@
             <p class="f-display" style="font-size:42px;color:var(--brass);margin-top:14px">
               Q {{ Number(selected.precio).toLocaleString('es-GT') }}
             </p>
-            <div style="display:flex;gap:10px;margin-top:16px">
+
+            <!-- Selector de cantidad -->
+            <div v-if="selected.stock > 0" style="display:flex;align-items:center;gap:0;margin-top:18px;border:1px solid var(--line);width:fit-content">
+              <button class="detail-qty-btn" @click="detailQty = Math.max(1, detailQty - 1)">−</button>
+              <span class="eyebrow" style="min-width:44px;text-align:center;color:var(--ink)">{{ detailQty }}</span>
+              <button class="detail-qty-btn" @click="detailQty = Math.min(selected.stock, detailQty + 1)">+</button>
+              <span class="eyebrow" style="padding:0 14px;color:var(--mute);border-left:1px solid var(--line)">
+                de {{ selected.stock }}
+              </span>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:14px">
               <button class="btn btn-primary" style="flex:1;height:56px"
-                      :disabled="selected.stock === 0" @click="addToCart(selected); selected = null">
-                {{ selected.stock === 0 ? 'SIN STOCK' : '+ AGREGAR A LA BOLSA' }}
+                      :disabled="selected.stock === 0" @click="addToCart(selected, detailQty); selected = null">
+                {{ selected.stock === 0 ? 'SIN STOCK' : `+ AGREGAR (${detailQty})` }}
               </button>
               <button class="btn btn-outline" style="height:56px; width:56px; padding:0"
                       @click="wishlist.toggle(selected)"
@@ -189,6 +200,7 @@ const activeFormat = ref('')
 const activeGenre  = ref('')
 const showGenres   = ref(false)
 const selected    = ref(null)
+const detailQty   = ref(1)
 
 // Debounce de 300ms sobre el campo de búsqueda
 let debounce = null
@@ -250,12 +262,12 @@ const selectedAlbum = computed(() => selected.value ? {
 function setFormat(f) { activeFormat.value = activeFormat.value === f ? '' : f; activeGenre.value = ''; showGenres.value = false }
 function setGenre(g)  { activeGenre.value  = activeGenre.value  === g ? '' : g; activeFormat.value = '' }
 function clearFilters() { activeFormat.value = ''; activeGenre.value = ''; searchRaw.value = ''; showGenres.value = false }
-function selectProduct(p) { selected.value = p }
+function selectProduct(p) { selected.value = p; detailQty.value = 1 }
 
-function addToCart(producto) {
+function addToCart(producto, qty = 1) {
   if (producto.stock === 0) { toast.add({ severity: 'warn', summary: 'Sin stock', life: 2000 }); return }
-  cart.add(producto)
-  toast.add({ severity: 'success', summary: 'Agregado a la bolsa', detail: producto.titulo_album, life: 2000 })
+  for (let i = 0; i < qty; i++) cart.add(producto)
+  toast.add({ severity: 'success', summary: `${qty} unidad${qty > 1 ? 'es' : ''} agregada${qty > 1 ? 's' : ''}`, detail: producto.titulo_album, life: 2000 })
 }
 
 onMounted(async () => {
@@ -343,4 +355,8 @@ onMounted(async () => {
 .panel-leave-to  { opacity:0; }
 .panel-enter-from .detail-panel { transform:translateX(100%); }
 .panel-leave-to  .detail-panel  { transform:translateX(100%); }
+
+.detail-qty-btn { width:44px; height:44px; font-size:20px; color:var(--ink); background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.detail-qty-btn:hover { background:rgba(255,255,255,0.04); }
+.admin-back-bar { display:flex; align-items:center; justify-content:space-between; padding:8px 32px; background:var(--velvet); flex-shrink:0; }
 </style>
