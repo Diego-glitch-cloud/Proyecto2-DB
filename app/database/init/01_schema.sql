@@ -183,8 +183,6 @@ CREATE TABLE IF NOT EXISTS Compra (
     nit_cf      VARCHAR(20)       NULL,
     fecha       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    CONSTRAINT chk_compra_cliente
-        CHECK (id_cliente IS NOT NULL OR nombre_cf IS NOT NULL),
     CONSTRAINT fk_compra_cliente
         FOREIGN KEY (id_cliente)  REFERENCES Cliente  (id)
         ON UPDATE CASCADE,
