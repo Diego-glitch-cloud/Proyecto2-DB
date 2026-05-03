@@ -51,32 +51,11 @@
     <!-- Main -->
     <div class="main">
 
-      <!-- Hero -->
-      <section v-if="hero" class="hero hairline">
-        <div class="hero-cover-wrap">
-          <div class="hero-blur" :style="heroBg" />
-          <div class="hero-overlay" />
-          <AlbumCover :album="heroAlbum" :size="260" class="hero-cover" />
-          <span class="hero-badge eyebrow">● DESTACADO</span>
-        </div>
-        <div class="hero-info">
-          <p class="eyebrow velvet">{{ hero.generos?.split(',')[0]?.trim() || 'ESPECIAL' }}</p>
-          <h2 class="hero-title f-display">{{ hero.titulo_album }}</h2>
-          <p class="f-serif hero-artist">{{ hero.artista }}, {{ hero.anio_album }}</p>
-          <div class="hero-price-row">
-            <span class="hero-price f-display">Q {{ Number(hero.precio).toLocaleString('es-GT') }}</span>
-            <FormatChip :formato="hero.tipo_formato" size="lg" />
-          </div>
-          <p class="eyebrow" style="color:var(--mute)">{{ hero.stock }} UNIDADES EN STOCK</p>
-          <div class="hero-actions">
-            <button class="btn btn-primary" @click="addToCart(hero)">+ AGREGAR A LA BOLSA</button>
-            <button class="btn btn-outline" @click="wishlist.toggle(hero)"
-                    :style="wishlist.has(hero.id) ? 'border-color:var(--velvet);color:var(--velvet)' : ''">
-              {{ wishlist.has(hero.id) ? '♥ GUARDADO' : '♡ WISHLIST' }}
-            </button>
-          </div>
-        </div>
-      </section>
+      <!-- Carrusel: más vendidos -->
+      <FeaturedCarousel
+        @select="selectProduct"
+        @add="p => addToCart(p)"
+      />
 
       <!-- Catalog grid -->
       <section v-if="filtered.length" class="section">
@@ -183,8 +162,9 @@ import PosterStrip from '@/components/PosterStrip.vue'
 import BLogo       from '@/components/BLogo.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import AlbumCover  from '@/components/AlbumCover.vue'
-import AlbumCard   from '@/components/AlbumCard.vue'
-import FormatChip  from '@/components/FormatChip.vue'
+import AlbumCard        from '@/components/AlbumCard.vue'
+import FormatChip       from '@/components/FormatChip.vue'
+import FeaturedCarousel from '@/components/FeaturedCarousel.vue'
 
 const router   = useRouter()
 const auth     = useAuthStore()
@@ -218,16 +198,6 @@ const dateStr = computed(() =>
   new Date().toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase()
 )
 
-const hero      = computed(() => products.value[0] || null)
-const heroAlbum = computed(() => hero.value ? {
-  titulo: hero.value.titulo_album, artista: hero.value.artista,
-  anio: hero.value.anio_album, url_portada: hero.value.url_portada
-} : null)
-const heroBg = computed(() => hero.value?.url_portada
-  ? { backgroundImage: `url(${hero.value.url_portada})` }
-  : { background: 'var(--velvet)' }
-)
-
 const allGenres = computed(() => {
   const set = new Set()
   products.value.forEach(p => (p.generos || '').split(',').forEach(g => { if (g.trim()) set.add(g.trim()) }))
@@ -242,7 +212,7 @@ const filterLabel = computed(() => {
 })
 
 const filtered = computed(() => {
-  return products.value.slice(1).filter(p => {
+  return products.value.filter(p => {
     const q = searchQuery.value.toLowerCase()
     const matchSearch = !q ||
       p.titulo_album?.toLowerCase().includes(q) ||

@@ -72,7 +72,9 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(v, i) in ventas" :key="v.id_compra" :class="{ 'dashed-b': i < ventas.length-1 }">
+              <tr v-for="(v, i) in ventas" :key="v.id_compra"
+                  :class="{ 'dashed-b': i < ventas.length-1, 'row-clickable': true }"
+                  @click="selectedVenta = v">
                 <td class="eyebrow mute">{{ String(v.id_compra).padStart(4,'0') }}</td>
                 <td class="eyebrow">{{ formatDate(v.fecha) }}</td>
                 <td>
@@ -81,7 +83,7 @@
                 <td class="eyebrow mute">{{ v.nit_cliente }}</td>
                 <td>
                   <p class="f-display" style="font-size:14px;font-style:italic">{{ v.items?.[0]?.titulo_album || '—' }}</p>
-                  <p v-if="v.items?.length > 1" class="eyebrow mute">+{{ v.items.length - 1 }} más</p>
+                  <p v-if="v.items?.length > 1" class="eyebrow" style="color:var(--brass)">+{{ v.items.length - 1 }} más · VER →</p>
                 </td>
                 <td class="eyebrow mute">{{ v.nombre_empleado || 'Online' }}</td>
                 <td><FormatChip :formato="v.items?.[0]?.tipo_formato || 'Vinilo'" /></td>
@@ -99,6 +101,59 @@
       </div>
     </div>
   </div>
+
+  <!-- Panel de detalle de venta -->
+  <Transition name="panel">
+    <div v-if="selectedVenta" class="vdetail-overlay" @click.self="selectedVenta = null">
+      <div class="vdetail-panel hairline">
+        <div class="vdetail-head hairline-b">
+          <div>
+            <p class="eyebrow brass">PEDIDO #{{ String(selectedVenta.id_compra).padStart(4,'0') }}</p>
+            <p class="eyebrow" style="color:var(--mute);margin-top:4px">{{ formatDate(selectedVenta.fecha) }}</p>
+          </div>
+          <button class="eyebrow" style="background:none;border:none;cursor:pointer;color:var(--mute)" @click="selectedVenta = null">✕ CERRAR</button>
+        </div>
+
+        <!-- Datos del cliente -->
+        <div class="vdetail-section hairline-b">
+          <p class="eyebrow mute" style="margin-bottom:10px">CLIENTE</p>
+          <div class="vdetail-row"><span class="eyebrow">NOMBRE</span><span style="font-size:14px">{{ selectedVenta.nombre_cliente }}</span></div>
+          <div class="vdetail-row"><span class="eyebrow">NIT</span><span class="eyebrow" style="color:var(--ink)">{{ selectedVenta.nit_cliente }}</span></div>
+          <div class="vdetail-row"><span class="eyebrow">VENDEDOR</span><span class="eyebrow" style="color:var(--ink)">{{ selectedVenta.nombre_empleado || 'ONLINE' }}</span></div>
+        </div>
+
+        <!-- Ítems -->
+        <div class="vdetail-section">
+          <p class="eyebrow mute" style="margin-bottom:12px">{{ selectedVenta.items?.length }} PRODUCTO{{ selectedVenta.items?.length > 1 ? 'S' : '' }}</p>
+          <div v-for="item in selectedVenta.items" :key="item.id_producto" class="vdetail-item hairline-b">
+            <div style="flex:1">
+              <p class="f-display" style="font-size:16px;line-height:1.1">{{ item.titulo_album }}</p>
+              <p class="eyebrow" style="margin-top:4px;color:var(--mute)">{{ item.nombre_artista }}</p>
+              <div style="display:flex;gap:10px;margin-top:6px;align-items:center">
+                <FormatChip :formato="item.tipo_formato" />
+                <span class="eyebrow" style="color:var(--mute)">{{ item.categoria }}</span>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <p class="eyebrow" style="color:var(--mute)">× {{ item.cantidad }}</p>
+              <p class="eyebrow" style="color:var(--mute);margin-top:2px">
+                Q {{ Number(item.precio_unitario).toLocaleString('es-GT') }} c/u
+              </p>
+              <p class="f-display brass" style="font-size:18px;margin-top:4px">
+                Q {{ Number(item.subtotal).toLocaleString('es-GT') }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="vdetail-total hairline-t">
+          <span class="eyebrow">TOTAL PEDIDO</span>
+          <span class="f-display brass" style="font-size:28px">Q {{ Number(selectedVenta.total).toLocaleString('es-GT') }}</span>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup>
@@ -111,10 +166,11 @@ import PosterStrip from '@/components/PosterStrip.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import FormatChip  from '@/components/FormatChip.vue'
 
-const router  = useRouter()
-const auth    = useAuthStore()
-const ventas  = ref([])
-const loading = ref(true)
+const router        = useRouter()
+const auth          = useAuthStore()
+const ventas        = ref([])
+const loading       = ref(true)
+const selectedVenta = ref(null)
 const fechaDesde = ref('')
 const fechaHasta = ref('')
 
@@ -194,5 +250,23 @@ onMounted(() => loadVentas())
 .sales-table th { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); font-size:9px; letter-spacing:.22em; color:var(--mute); font-family:var(--f-mono); }
 .sales-table td { padding:12px 8px; vertical-align:middle; }
 .sales-table tr.dashed-b td { border-bottom:1px dashed var(--line); }
+.row-clickable { cursor:pointer; transition:background 100ms; }
+.row-clickable:hover td { background:rgba(255,255,255,.03); }
 .mute { color:var(--mute); }
+
+/* Panel de detalle */
+.vdetail-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:200; display:flex; justify-content:flex-end; }
+.vdetail-panel { width:480px; height:100%; background:var(--paper); overflow-y:auto; display:flex; flex-direction:column; }
+.vdetail-head { display:flex; align-items:flex-start; justify-content:space-between; padding:20px 24px; flex-shrink:0; }
+.vdetail-section { padding:16px 24px; }
+.vdetail-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; }
+.vdetail-item { display:flex; align-items:flex-start; gap:16px; padding:14px 0; }
+.vdetail-total { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; flex-shrink:0; }
+
+.panel-enter-active, .panel-leave-active { transition:opacity 200ms; }
+.panel-enter-active .vdetail-panel, .panel-leave-active .vdetail-panel { transition:transform 220ms ease; }
+.panel-enter-from { opacity:0; }
+.panel-leave-to  { opacity:0; }
+.panel-enter-from .vdetail-panel { transform:translateX(100%); }
+.panel-leave-to  .vdetail-panel  { transform:translateX(100%); }
 </style>

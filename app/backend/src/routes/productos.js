@@ -40,6 +40,47 @@ const SQL_PRODUCTO = `
 
 async function productosRoutes(fastify) {
 
+  // ── GET /api/productos/mas-vendidos ───────────────────────────────────────
+  // Top N productos por unidades vendidas (SUM de DetalleVenta).
+  // Declarado antes de /api/productos para que el router no interprete
+  // "mas-vendidos" como un :id numérico.
+  fastify.get('/api/productos/mas-vendidos', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: { limit: { type: 'integer', minimum: 1, maximum: 20, default: 8 } }
+      }
+    }
+  }, async (request) => {
+    const limit = request.query.limit ?? 8
+    const [rows] = await pool.execute(`
+      SELECT
+        p.id, p.precio, p.stock,
+        alb.titulo      AS titulo_album,
+        alb.anio        AS anio_album,
+        alb.url_portada,
+        art.nombre      AS artista,
+        at.detalle      AS tipo_formato,
+        COALESCE(SUM(dv.cantidad), 0) AS total_vendido,
+        (
+          SELECT GROUP_CONCAT(g.detalle ORDER BY g.detalle SEPARATOR ', ')
+          FROM   Album_Genero ag
+          JOIN   Genero g ON g.id = ag.id_genero
+          WHERE  ag.id_album = p.id_album
+        ) AS generos
+      FROM      Producto     p
+      JOIN      Album        alb ON alb.id  = p.id_album
+      JOIN      Artista      art ON art.id  = alb.id_artista
+      JOIN      Album_Tipo   at  ON at.id   = p.id_album_tipo
+      LEFT JOIN DetalleVenta dv  ON dv.id_producto = p.id
+      GROUP BY  p.id
+      ORDER BY  total_vendido DESC, p.id ASC
+      LIMIT ?
+    `, [limit])
+    return rows
+  })
+
+
   // ── GET /api/productos ─────────────────────────────────────────────────────
   fastify.get('/api/productos', async () => {
     const [rows] = await pool.execute(
