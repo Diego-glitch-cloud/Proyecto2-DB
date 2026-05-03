@@ -65,7 +65,7 @@ async function main() {
   }
 
   await pool.end()
-  console.log(`\n✅ Completado: ${ok} actualizados, ${fail} sin resultado\n`)
+  console.log(`\nCompletado: ${ok} actualizados, ${fail} sin resultado\n`)
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
