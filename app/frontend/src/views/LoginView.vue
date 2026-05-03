@@ -42,20 +42,7 @@
           </div>
 
           <!-- Stats -->
-          <div class="stats-row">
-            <div class="stat">
-              <span class="stat-n">287</span>
-              <span class="eyebrow">EDICIONES</span>
-            </div>
-            <div class="stat">
-              <span class="stat-n">12</span>
-              <span class="eyebrow">GÉNEROS</span>
-            </div>
-            <div class="stat">
-              <span class="stat-n">27</span>
-              <span class="eyebrow">SELLOS</span>
-            </div>
-          </div>
+         
         </div>
       </div>
 

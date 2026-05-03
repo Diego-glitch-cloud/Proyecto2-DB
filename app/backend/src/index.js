@@ -3,57 +3,43 @@
 require('dotenv').config()
 
 const Fastify = require('fastify')
-const cors = require('@fastify/cors')
-const jwt = require('@fastify/jwt')
+const cors    = require('@fastify/cors')
+const jwt     = require('@fastify/jwt')
 
-const authRoutes = require('./routes/auth')
+const authRoutes      = require('./routes/auth')
 const catalogosRoutes = require('./routes/catalogos')
-const albumsRoutes = require('./routes/albums')
+const albumsRoutes    = require('./routes/albums')
 const productosRoutes = require('./routes/productos')
 const ventasRoutes    = require('./routes/ventas')
+const statsRoutes     = require('./routes/stats')
+const clientesRoutes  = require('./routes/clientes')
 const pool = require('./db')
 
 const fastify = Fastify({ logger: true })
 
-// CORS permite que el frontend hable con esta API.
 fastify.register(cors, { origin: true })
-
-// El plugin JWT expone fastify.jwt.sign() y fastify.jwt.verify().
-fastify.register(jwt, { secret: process.env.JWT_SECRET })
+fastify.register(jwt,  { secret: process.env.JWT_SECRET })
 
 fastify.register(authRoutes)
 fastify.register(catalogosRoutes)
 fastify.register(albumsRoutes)
 fastify.register(productosRoutes)
 fastify.register(ventasRoutes)
+fastify.register(statsRoutes)
+fastify.register(clientesRoutes)
 
-// ── MANEJADOR GLOBAL DE ERRORES ────────────────────────────────────────────
+// ── Error handler global ───────────────────────────────────────────────────
 fastify.setErrorHandler((error, request, reply) => {
   const statusCode = error.statusCode ?? 500
-
-  fastify.log.error(
-    { err: error, method: request.method, url: request.url },
-    'Request error' 
-  )
-
-  if (statusCode >= 500) {
-    return reply.code(statusCode).send({ error: 'Error interno del servidor' })
-  }
-
-  // Errores de validación de JSON Schema (400)
+  fastify.log.error({ err: error, method: request.method, url: request.url }, 'Request error')
+  if (statusCode >= 500) return reply.code(statusCode).send({ error: 'Error interno del servidor' })
   return reply.code(statusCode).send({ error: error.message })
 })
 
-// Verifica que el proceso del servidor responde
-fastify.get('/api/health', async () => ({
-  status: 'ok',
-  timestamp: new Date().toISOString()
-}))
+fastify.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
 
-// Verifica conectividad real con la DB en runtime
 fastify.get('/api/health-db', async (request, reply) => {
   try {
-    // Agregamos un timeout simple para evitar que la petición quede colgada
     const connection = await pool.getConnection()
     const [[row]] = await connection.execute('SELECT 1 AS connected')
     connection.release()
@@ -67,8 +53,5 @@ fastify.get('/api/health-db', async (request, reply) => {
 const PORT = parseInt(process.env.PORT ?? '3000', 10)
 
 fastify.listen({ port: PORT, host: '0.0.0.0' }, (err) => {
-  if (err) {
-    fastify.log.error(err)
-    process.exit(1)
-  }
+  if (err) { fastify.log.error(err); process.exit(1) }
 })
