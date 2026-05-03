@@ -245,6 +245,7 @@ CREATE OR REPLACE VIEW vw_resumen_ventas AS
 SELECT
     c.id                                         AS id_compra,
     c.fecha,
+    cli.id                                       AS id_cliente,
     pe_cli.nombre                                AS nombre_cliente,
     cli.NIT                                      AS nit_cliente,
     pe_emp.nombre                                AS nombre_empleado,
