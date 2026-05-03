@@ -99,17 +99,75 @@ async function ventasRoutes(fastify) {
       // ── INICIO DE TRANSACCIÓN ────────────────────────────────────────────
       await conn.beginTransaction()
 
-      // ── PASO 5.2 ─────────────────────────────────────────────────────────
-      // INSERT INTO Compra → obtener id_compra (insertId)
-      // [se implementará en el siguiente paso]
+      // insertar compra
+      const [result] = await conn.execute(
+        'INSERT INTO Compra (id_cliente, id_empleado) VALUES (?, ?)',
+        [id_cliente, id_empleado]
+      )
+      const id_compra = result.insertId
 
-      // ── PASO 5.3 + 5.4 ───────────────────────────────────────────────────
-      // Para cada item: verificar stock, INSERT DetalleVenta, UPDATE stock
-      // [se implementará en el siguiente paso]
+      // bucle de items ───────────────────────────────────
+      for (const { id_producto, cantidad } of items) {
+
+        // SELECT ... FOR UPDATE bloquea la fila mientras dure la transacción.
+        // Sin este lock, dos compras simultáneas podrían leer el mismo stock,
+        // ambas ver que hay suficiente, y terminar dejando el stock negativo.
+        const [[producto]] = await conn.execute(
+          'SELECT precio, stock FROM Producto WHERE id = ? FOR UPDATE',
+          [id_producto]
+        )
+
+        if (!producto) {
+          await conn.rollback()
+          return reply.code(422).send({ error: `No existe el producto con id ${id_producto}` })
+        }
+
+        // verificar stock antes de escribir ───────────────────
+        if (producto.stock < cantidad) {
+          await conn.rollback()
+          return reply.code(409).send({
+            error:               `Stock insuficiente para el producto ${id_producto}`,
+            stock_disponible:    producto.stock,
+            cantidad_solicitada: cantidad
+          })
+        }
+
+        // precio_unitario = snapshot del precio en este momento.
+        await conn.execute(
+          `INSERT INTO DetalleVenta (id_compra, id_producto, cantidad, precio_unitario)
+           VALUES (?, ?, ?, ?)`,
+          [id_compra, id_producto, cantidad, producto.precio]
+        )
+
+
+        await conn.execute(
+          'UPDATE Producto SET stock = stock - ? WHERE id = ?',
+          [cantidad, id_producto]
+        )
+      }
 
       await conn.commit()
 
-      return reply.code(201).send({ message: 'Transacción iniciada (implementación pendiente)' })
+      // Consultar el recibo completo usando la vista vw_resumen_ventas.
+      const [detalles] = await pool.execute(
+        'SELECT * FROM vw_resumen_ventas WHERE id_compra = ?',
+        [id_compra]
+      )
+
+      return reply.code(201).send({
+        id_compra,
+        fecha:       detalles[0]?.fecha       ?? null,
+        id_cliente,
+        id_empleado: id_empleado              ?? null,
+        items:       detalles.map(d => ({
+          id_producto:     d.id_producto,
+          nombre_producto: `${d.nombre_artista} - ${d.titulo_album} (${d.tipo_formato})`,
+          cantidad:        d.cantidad,
+          precio_unitario: d.precio_unitario,
+          subtotal:        d.subtotal
+        })),
+        total: detalles.reduce((sum, d) => sum + Number(d.subtotal), 0).toFixed(2)
+      })
 
     } catch (err) {
       await conn.rollback()
