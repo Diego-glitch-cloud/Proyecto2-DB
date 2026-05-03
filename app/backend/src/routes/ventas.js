@@ -179,6 +179,150 @@ async function ventasRoutes(fastify) {
   })
 
 
+  // ── POST /api/ventas/presencial ───────────────────────────────────────────
+  // Registra una venta presencial en tienda. Solo admin y vendedor.
+  //
+  //   Con cuenta:  { correo: "x@y.com", items: [...] }
+  //     → busca la Persona por correo, resuelve su Cliente.id, lo vincula.
+  //   Sin cuenta:  { nombre_cf: "Juan Pérez", nit_cf: "CF", items: [...] }
+  //     → id_cliente queda NULL; nombre_cf/nit_cf se guardan directo en Compra.
+  //
+  // Transacción explícita con ROLLBACK por stock insuficiente.
+  fastify.post('/api/ventas/presencial', {
+    preHandler: requireRol('admin', 'vendedor'),
+    schema: {
+      body: {
+        type: 'object',
+        required: ['items'],
+        properties: {
+          correo:    { type: 'string' },
+          nombre_cf: { type: 'string', minLength: 1, maxLength: 200 },
+          nit_cf:    { type: 'string', minLength: 1, maxLength: 20  },
+          items: {
+            type: 'array',
+            minItems: 1,
+            items: {
+              type: 'object',
+              required: ['id_producto', 'cantidad'],
+              properties: {
+                id_producto: { type: 'integer', minimum: 1 },
+                cantidad:    { type: 'integer', minimum: 1 }
+              },
+              additionalProperties: false
+            }
+          }
+        },
+        additionalProperties: false
+      }
+    }
+  }, async (request, reply) => {
+    const { correo, nombre_cf, nit_cf, items } = request.body
+    const { id: idPersona } = request.user
+
+    if (!correo && !nombre_cf) {
+      return reply.code(400).send({ error: 'Debe indicar el correo del cliente o el nombre para CF' })
+    }
+
+    const conn = await pool.getConnection()
+    try {
+      // Resolver id_empleado del JWT
+      const [[empFila]] = await conn.execute(
+        'SELECT id FROM Empleado WHERE id_persona = ?', [idPersona]
+      )
+      if (!empFila) {
+        return reply.code(422).send({ error: 'El usuario autenticado no tiene registro de empleado' })
+      }
+      const id_empleado = empFila.id
+
+      // Resolver id_cliente (cuenta existente) o preparar datos CF
+      let id_cliente      = null
+      let nombre_cf_final = null
+      let nit_cf_final    = null
+
+      if (correo) {
+        const [[personaFila]] = await conn.execute(
+          'SELECT id FROM Persona WHERE correo = ?', [correo]
+        )
+        if (!personaFila) {
+          return reply.code(422).send({ error: `No existe ninguna cuenta con correo: ${correo}` })
+        }
+        const [[clienteFila]] = await conn.execute(
+          'SELECT id FROM Cliente WHERE id_persona = ?', [personaFila.id]
+        )
+        if (!clienteFila) {
+          return reply.code(422).send({ error: `La cuenta ${correo} no tiene perfil de cliente` })
+        }
+        id_cliente = clienteFila.id
+      } else {
+        nombre_cf_final = nombre_cf
+        nit_cf_final    = nit_cf || 'CF'
+      }
+
+      await conn.beginTransaction()
+
+      const [result] = await conn.execute(
+        'INSERT INTO Compra (id_cliente, id_empleado, nombre_cf, nit_cf) VALUES (?, ?, ?, ?)',
+        [id_cliente, id_empleado, nombre_cf_final, nit_cf_final]
+      )
+      const id_compra = result.insertId
+
+      for (const { id_producto, cantidad } of items) {
+        const [[producto]] = await conn.execute(
+          'SELECT precio, stock FROM Producto WHERE id = ? FOR UPDATE', [id_producto]
+        )
+        if (!producto) {
+          await conn.rollback()
+          return reply.code(422).send({ error: `No existe el producto con id ${id_producto}` })
+        }
+        if (producto.stock < cantidad) {
+          await conn.rollback()
+          return reply.code(409).send({
+            error:               `Stock insuficiente para el producto ${id_producto}`,
+            stock_disponible:    producto.stock,
+            cantidad_solicitada: cantidad
+          })
+        }
+        await conn.execute(
+          `INSERT INTO DetalleVenta (id_compra, id_producto, cantidad, precio_unitario)
+           VALUES (?, ?, ?, ?)`,
+          [id_compra, id_producto, cantidad, producto.precio]
+        )
+        await conn.execute(
+          'UPDATE Producto SET stock = stock - ? WHERE id = ?', [cantidad, id_producto]
+        )
+      }
+
+      await conn.commit()
+
+      const [detalles] = await pool.execute(
+        'SELECT * FROM vw_resumen_ventas WHERE id_compra = ?', [id_compra]
+      )
+
+      return reply.code(201).send({
+        id_compra,
+        fecha:          detalles[0]?.fecha          ?? null,
+        nombre_cliente: detalles[0]?.nombre_cliente ?? null,
+        nit_cliente:    detalles[0]?.nit_cliente    ?? null,
+        id_empleado,
+        items: detalles.map(d => ({
+          id_producto:     d.id_producto,
+          nombre_producto: `${d.nombre_artista} - ${d.titulo_album} (${d.tipo_formato})`,
+          cantidad:        d.cantidad,
+          precio_unitario: d.precio_unitario,
+          subtotal:        d.subtotal
+        })),
+        total: detalles.reduce((sum, d) => sum + Number(d.subtotal), 0).toFixed(2)
+      })
+
+    } catch (err) {
+      await conn.rollback()
+      throw err
+    } finally {
+      conn.release()
+    }
+  })
+
+
   // ── GET /api/ventas ────────────────────────────────────────────────────────
   // Reporte completo de ventas. Solo admin y vendedor.
   // Acepta filtros opcionales por rango de fechas:

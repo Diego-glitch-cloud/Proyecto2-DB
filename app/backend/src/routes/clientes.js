@@ -58,6 +58,30 @@ async function clientesRoutes(fastify) {
   })
 
 
+  // ── GET /api/admin/buscar-cliente ────────────────────────────────────────
+  // Busca un cliente por correo. Usado en el modal de venta presencial para
+  // verificar que la cuenta existe antes de enviar la orden.
+  fastify.get('/api/admin/buscar-cliente', {
+    preHandler: requireRol('admin', 'vendedor'),
+    schema: {
+      querystring: {
+        type: 'object',
+        required: ['correo'],
+        properties: { correo: { type: 'string' } }
+      }
+    }
+  }, async (req, reply) => {
+    const [[row]] = await pool.execute(`
+      SELECT c.id, p.nombre, p.correo, c.NIT
+      FROM   Persona p
+      JOIN   Cliente c ON c.id_persona = p.id
+      WHERE  p.correo = ?
+    `, [req.query.correo])
+    if (!row) return reply.code(404).send({ error: 'No existe ningún cliente con ese correo' })
+    return row
+  })
+
+
   // ── GET /api/admin/clientes ───────────────────────────────────────────────
   // Lista de todos los clientes (para vista de admin/vendedor).
   fastify.get('/api/admin/clientes', {

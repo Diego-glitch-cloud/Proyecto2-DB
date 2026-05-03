@@ -171,14 +171,20 @@ CREATE TABLE IF NOT EXISTS Producto (
 -- Ventas
 -- ============================================================
 
--- id_empleado es NULL en compras online (el cliente compra solo).
--- En ventas físicas de tienda contiene el id del empleado que registró la compra.
+-- id_cliente es NULL en ventas presenciales a Consumidor Final (sin cuenta).
+-- nombre_cf y nit_cf capturan los datos del comprador CF en ese caso.
+-- id_empleado es NULL en compras online (el cliente compra solo desde la web).
+-- CHECK garantiza que toda compra tenga al menos un identificador de cliente.
 CREATE TABLE IF NOT EXISTS Compra (
-    id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    id_cliente  INT UNSIGNED NOT NULL,
-    id_empleado INT UNSIGNED     NULL,
-    fecha       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    id_cliente  INT UNSIGNED      NULL,
+    id_empleado INT UNSIGNED      NULL,
+    nombre_cf   VARCHAR(200)      NULL,
+    nit_cf      VARCHAR(20)       NULL,
+    fecha       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    CONSTRAINT chk_compra_cliente
+        CHECK (id_cliente IS NOT NULL OR nombre_cf IS NOT NULL),
     CONSTRAINT fk_compra_cliente
         FOREIGN KEY (id_cliente)  REFERENCES Cliente  (id)
         ON UPDATE CASCADE,
@@ -241,27 +247,29 @@ CREATE INDEX idx_cliente_NIT      ON Cliente  (NIT);
 -- para que el frontend los combine segun su necesidad de presentacion.
 -- ============================================================
 
+-- JOIN → LEFT JOIN en Cliente/Persona para que las ventas CF (id_cliente NULL)
+-- también aparezcan en el reporte. COALESCE usa nombre_cf/nit_cf como fallback.
 CREATE OR REPLACE VIEW vw_resumen_ventas AS
 SELECT
-    c.id                                         AS id_compra,
+    c.id                                              AS id_compra,
     c.fecha,
-    cli.id                                       AS id_cliente,
-    pe_cli.nombre                                AS nombre_cliente,
-    cli.NIT                                      AS nit_cliente,
-    pe_emp.nombre                                AS nombre_empleado,
-    p.id                                         AS id_producto,
-    art.nombre                                   AS nombre_artista,
-    alb.titulo                                   AS titulo_album,
-    alb.anio                                     AS anio_album,
+    cli.id                                            AS id_cliente,
+    COALESCE(pe_cli.nombre, c.nombre_cf)              AS nombre_cliente,
+    COALESCE(cli.NIT,       c.nit_cf)                 AS nit_cliente,
+    pe_emp.nombre                                     AS nombre_empleado,
+    p.id                                              AS id_producto,
+    art.nombre                                        AS nombre_artista,
+    alb.titulo                                        AS titulo_album,
+    alb.anio                                          AS anio_album,
     alb.url_portada,
-    at.detalle                                   AS tipo_formato,
-    cat.detalle                                  AS categoria,
+    at.detalle                                        AS tipo_formato,
+    cat.detalle                                       AS categoria,
     dv.cantidad,
     dv.precio_unitario,
-    (dv.cantidad * dv.precio_unitario)           AS subtotal
+    (dv.cantidad * dv.precio_unitario)                AS subtotal
 FROM        Compra       c
-JOIN        Cliente      cli     ON c.id_cliente    = cli.id
-JOIN        Persona      pe_cli  ON cli.id_persona  = pe_cli.id
+LEFT JOIN   Cliente      cli     ON c.id_cliente    = cli.id
+LEFT JOIN   Persona      pe_cli  ON cli.id_persona  = pe_cli.id
 LEFT JOIN   Empleado     emp     ON c.id_empleado   = emp.id
 LEFT JOIN   Persona      pe_emp  ON emp.id_persona  = pe_emp.id
 JOIN        DetalleVenta dv      ON c.id            = dv.id_compra

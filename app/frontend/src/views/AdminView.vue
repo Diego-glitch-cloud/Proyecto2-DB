@@ -28,8 +28,9 @@
             <p class="f-serif page-sub">Estado actual del sistema — datos en tiempo real.</p>
           </div>
           <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn btn-primary" style="height:40px" @click="showVentaModal = true">+ VENTA PRESENCIAL</button>
             <RouterLink to="/admin/ventas" class="btn btn-ghost" style="height:40px;text-decoration:none">REPORTE VENTAS →</RouterLink>
-            <RouterLink to="/admin/inventario" class="btn btn-primary" style="height:40px;text-decoration:none">+ AGREGAR PRODUCTO</RouterLink>
+            <RouterLink to="/admin/inventario" class="btn btn-ghost" style="height:40px;text-decoration:none">+ AGREGAR PRODUCTO</RouterLink>
             <ThemeToggle />
           </div>
         </div>
@@ -130,12 +131,115 @@
       </div>
     </div>
   </div>
+
+  <!-- ── MODAL: VENTA PRESENCIAL ──────────────────────────────────────── -->
+  <Teleport to="body">
+    <div v-if="showVentaModal" class="vp-overlay" @click.self="cerrarVentaModal">
+      <div class="vp-modal">
+
+        <!-- Pantalla de éxito -->
+        <template v-if="ventaExito">
+          <div class="vp-success">
+            <p class="eyebrow brass" style="margin-bottom:8px">✓ VENTA REGISTRADA</p>
+            <p class="f-display" style="font-size:36px;letter-spacing:-0.02em">#{{ String(ventaExito.id_compra).padStart(4,'0') }}</p>
+            <p class="eyebrow mute" style="margin-top:6px">{{ ventaExito.nombre_cliente }} · {{ ventaExito.nit_cliente }}</p>
+            <div style="width:100%;margin-top:20px">
+              <div v-for="it in ventaExito.items" :key="it.id_producto" class="vp-item-row hairline-b">
+                <span style="flex:1;font-size:12px">{{ it.nombre_producto }}</span>
+                <span class="eyebrow" style="padding:0 12px">×{{ it.cantidad }}</span>
+                <span class="eyebrow brass">Q {{ Number(it.subtotal).toFixed(2) }}</span>
+              </div>
+            </div>
+            <p class="f-display brass" style="font-size:26px;text-align:right;width:100%;margin-top:14px">TOTAL Q {{ ventaExito.total }}</p>
+            <button class="btn btn-primary" style="width:100%;height:46px;margin-top:20px" @click="cerrarVentaModal">CERRAR</button>
+          </div>
+        </template>
+
+        <template v-else>
+          <!-- Header -->
+          <div class="vp-header hairline-b">
+            <div>
+              <p class="eyebrow brass">● NUEVA VENTA PRESENCIAL</p>
+              <h2 class="f-display" style="font-size:22px;margin-top:2px">Venta <em class="accent">en tienda</em></h2>
+            </div>
+            <button class="rail-btn" @click="cerrarVentaModal"><X :size="18" :stroke-width="1.4"/></button>
+          </div>
+
+          <div class="vp-body">
+            <!-- 01 · CLIENTE -->
+            <div class="vp-section hairline-b">
+              <p class="eyebrow mute" style="margin-bottom:10px">01 · CLIENTE</p>
+              <div class="vp-tabs">
+                <button :class="['vp-tab', tipoCliente==='cuenta' && 'active']" @click="tipoCliente='cuenta'; clienteEncontrado=null; correoError=''">CON CUENTA</button>
+                <button :class="['vp-tab', tipoCliente==='cf' && 'active']"     @click="tipoCliente='cf'">CONSUMIDOR FINAL</button>
+              </div>
+              <div v-if="tipoCliente==='cuenta'" style="margin-top:10px">
+                <div style="display:flex;gap:8px">
+                  <input v-model="correoBusqueda" class="vp-field" placeholder="correo@ejemplo.com" style="flex:1" @keyup.enter="buscarClientePorCorreo"/>
+                  <button class="btn btn-ghost" style="height:38px;font-size:9px;padding:0 12px;flex-shrink:0" @click="buscarClientePorCorreo">VERIFICAR</button>
+                </div>
+                <p v-if="clienteEncontrado" class="eyebrow brass" style="margin-top:6px">✓ {{ clienteEncontrado.nombre }} · NIT {{ clienteEncontrado.NIT }}</p>
+                <p v-if="correoError"       class="eyebrow velvet" style="margin-top:6px">✗ {{ correoError }}</p>
+              </div>
+              <div v-else style="display:flex;gap:10px;margin-top:10px">
+                <input v-model="nombreCF" class="vp-field" placeholder="Nombre del cliente" style="flex:1"/>
+                <input v-model="nitCF"   class="vp-field" placeholder="NIT o CF" style="width:100px"/>
+              </div>
+            </div>
+
+            <!-- 02 · PRODUCTOS -->
+            <div class="vp-section hairline-b">
+              <p class="eyebrow mute" style="margin-bottom:10px">02 · PRODUCTOS</p>
+              <input v-model="productoBusqueda" class="vp-field" placeholder="Buscar álbum o artista…"/>
+              <div class="vp-prod-list">
+                <p v-if="!productosFiltrados.length" class="eyebrow mute" style="padding:10px 12px">Sin resultados</p>
+                <div v-for="p in productosFiltrados" :key="p.id" class="vp-prod-row">
+                  <div style="flex:1;min-width:0">
+                    <p style="font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.titulo_album }} ({{ p.tipo_formato }})</p>
+                    <p class="eyebrow mute" style="font-size:8px;margin-top:2px">{{ p.artista }} · Q{{ p.precio }} · Stock: {{ p.stock }}</p>
+                  </div>
+                  <button class="vp-add-btn" :disabled="p.stock === 0" @click="agregarItem(p)">+</button>
+                </div>
+              </div>
+
+              <!-- Items añadidos -->
+              <div v-if="ventaItems.length" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+                <p class="eyebrow mute" style="margin-bottom:8px">ÍTEMS AÑADIDOS</p>
+                <div v-for="(item, i) in ventaItems" :key="item.producto.id" class="vp-item-row">
+                  <span style="flex:1;font-size:12px">{{ item.producto.titulo_album }} ({{ item.producto.tipo_formato }})</span>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <button class="vp-qty-btn" @click="item.cantidad > 1 ? item.cantidad-- : quitarItem(i)">−</button>
+                    <span class="eyebrow" style="min-width:20px;text-align:center">{{ item.cantidad }}</span>
+                    <button class="vp-qty-btn" @click="item.cantidad < item.producto.stock && item.cantidad++">+</button>
+                    <span class="eyebrow brass" style="min-width:64px;text-align:right">Q {{ (item.cantidad * Number(item.producto.precio)).toFixed(2) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 03 · CONFIRMAR -->
+            <div class="vp-section">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+                <p class="eyebrow mute">03 · TOTAL</p>
+                <p class="f-display brass" style="font-size:28px">Q {{ totalVenta }}</p>
+              </div>
+              <p v-if="ventaError" class="eyebrow velvet" style="margin-bottom:10px">✗ {{ ventaError }}</p>
+              <button class="btn btn-primary" style="width:100%;height:46px" :disabled="!puedeConfirmar || ventaLoading" @click="confirmarVenta">
+                {{ ventaLoading ? 'PROCESANDO…' : 'REGISTRAR VENTA' }}
+              </button>
+            </div>
+          </div>
+        </template>
+
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { BarChart2, Package, ShoppingBag, Eye, Users, LogOut } from 'lucide-vue-next'
+import { BarChart2, Package, ShoppingBag, Eye, Users, LogOut, X } from 'lucide-vue-next'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip } from 'chart.js'
 import { useAuthStore } from '@/stores/auth.js'
@@ -149,9 +253,23 @@ ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip)
 const router = useRouter()
 const auth   = useAuthStore()
 
-const stats    = ref({})
-const ventas   = ref([])
+const stats     = ref({})
+const ventas    = ref([])
 const productos = ref([])
+
+// ── Venta presencial ──────────────────────────────────────────────────────
+const showVentaModal    = ref(false)
+const tipoCliente       = ref('cuenta')   // 'cuenta' | 'cf'
+const correoBusqueda    = ref('')
+const clienteEncontrado = ref(null)
+const correoError       = ref('')
+const nombreCF          = ref('')
+const nitCF             = ref('CF')
+const productoBusqueda  = ref('')
+const ventaItems        = ref([])
+const ventaLoading      = ref(false)
+const ventaError        = ref('')
+const ventaExito        = ref(null)
 
 // KPIs: solo datos reales, sin deltas ni comparativas inventadas
 const kpis = computed(() => [
@@ -183,6 +301,28 @@ const kpis = computed(() => [
 
 const stockAlerts  = computed(() => productos.value.filter(p => p.stock < 5).slice(0, 6))
 const recentSales  = computed(() => ventas.value.slice(0, 8))
+
+const productosFiltrados = computed(() => {
+  const q    = productoBusqueda.value.toLowerCase().trim()
+  const yaId = new Set(ventaItems.value.map(i => i.producto.id))
+  const base = q
+    ? productos.value.filter(p =>
+        p.titulo_album?.toLowerCase().includes(q) ||
+        p.artista?.toLowerCase().includes(q)
+      )
+    : productos.value.slice(0, 20)
+  return base.filter(p => !yaId.has(p.id)).slice(0, 10)
+})
+
+const totalVenta = computed(() =>
+  ventaItems.value.reduce((s, i) => s + i.cantidad * Number(i.producto.precio), 0).toFixed(2)
+)
+
+const puedeConfirmar = computed(() => {
+  if (!ventaItems.value.length) return false
+  if (tipoCliente.value === 'cuenta') return !!correoBusqueda.value.trim() && !!clienteEncontrado.value
+  return !!nombreCF.value.trim()
+})
 
 // Gráfica de barras con datos REALES de ventas por mes
 const chartData = computed(() => {
@@ -218,6 +358,77 @@ const chartOptions = {
 
 function alertAlbum(p) { return { titulo: p.titulo_album, artista: p.artista, url_portada: p.url_portada } }
 function formatDate(iso) { return new Date(iso).toLocaleDateString('es-GT', { day:'2-digit', month:'short' }).toUpperCase() }
+
+function cerrarVentaModal() {
+  showVentaModal.value    = false
+  tipoCliente.value       = 'cuenta'
+  correoBusqueda.value    = ''
+  clienteEncontrado.value = null
+  correoError.value       = ''
+  nombreCF.value          = ''
+  nitCF.value             = 'CF'
+  productoBusqueda.value  = ''
+  ventaItems.value        = []
+  ventaLoading.value      = false
+  ventaError.value        = ''
+  ventaExito.value        = null
+}
+
+async function buscarClientePorCorreo() {
+  correoError.value       = ''
+  clienteEncontrado.value = null
+  const correo = correoBusqueda.value.trim()
+  if (!correo) return
+  try {
+    const { data } = await api.get(`/admin/buscar-cliente?correo=${encodeURIComponent(correo)}`)
+    clienteEncontrado.value = data
+  } catch (err) {
+    correoError.value = err.response?.data?.error ?? 'Cliente no encontrado'
+  }
+}
+
+function agregarItem(producto) {
+  const existe = ventaItems.value.find(i => i.producto.id === producto.id)
+  if (existe) {
+    if (existe.cantidad < producto.stock) existe.cantidad++
+  } else {
+    ventaItems.value.push({ producto, cantidad: 1 })
+  }
+}
+
+function quitarItem(idx) {
+  ventaItems.value.splice(idx, 1)
+}
+
+async function confirmarVenta() {
+  ventaError.value   = ''
+  ventaLoading.value = true
+  try {
+    const body = {
+      items: ventaItems.value.map(i => ({ id_producto: i.producto.id, cantidad: i.cantidad }))
+    }
+    if (tipoCliente.value === 'cuenta') {
+      body.correo = correoBusqueda.value.trim()
+    } else {
+      body.nombre_cf = nombreCF.value.trim()
+      body.nit_cf    = nitCF.value.trim() || 'CF'
+    }
+    const { data } = await api.post('/ventas/presencial', body)
+    ventaExito.value = data
+    const [s, v, p] = await Promise.all([
+      api.get('/stats/publico').then(r => r.data),
+      api.get('/ventas').then(r => r.data),
+      api.get('/productos').then(r => r.data)
+    ])
+    stats.value     = s
+    ventas.value    = v
+    productos.value = p
+  } catch (err) {
+    ventaError.value = err.response?.data?.error ?? 'Error al registrar la venta'
+  } finally {
+    ventaLoading.value = false
+  }
+}
 
 onMounted(async () => {
   const [s, v, p] = await Promise.all([
@@ -273,4 +484,26 @@ onMounted(async () => {
 .sales-table td { padding:12px 8px; vertical-align:middle; }
 .sales-table tr.dashed-b td { border-bottom:1px dashed var(--line); }
 .mute { color:var(--mute); }
+
+/* Venta presencial modal */
+.vp-overlay { position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px; }
+.vp-modal { background:var(--paper);width:100%;max-width:500px;max-height:90vh;display:flex;flex-direction:column;border:1px solid var(--line); }
+.vp-header { display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px;flex-shrink:0; }
+.vp-body { overflow-y:auto;flex:1; }
+.vp-section { padding:14px 20px; }
+.vp-tabs { display:flex;border:1px solid var(--line); }
+.vp-tab { flex:1;height:34px;font-family:var(--f-mono);font-size:9px;letter-spacing:.18em;color:var(--mute);border:none;background:none;cursor:pointer;transition:background 120ms,color 120ms; }
+.vp-tab.active { background:var(--ink);color:var(--paper); }
+.vp-field { width:100%;height:38px;padding:0 10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:var(--f-mono);font-size:11px;box-sizing:border-box; }
+.vp-field:focus { outline:none;border-color:var(--brass); }
+.vp-field::placeholder { color:var(--mute); }
+.vp-prod-list { max-height:140px;overflow-y:auto;margin-top:10px;border:1px solid var(--line); }
+.vp-prod-row { display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line); }
+.vp-prod-row:last-child { border-bottom:none; }
+.vp-add-btn { width:28px;height:28px;border:1px solid var(--line);background:none;color:var(--ink);font-size:18px;cursor:pointer;flex-shrink:0;line-height:1;display:flex;align-items:center;justify-content:center; }
+.vp-add-btn:disabled { color:var(--mute);cursor:not-allowed;opacity:.5; }
+.vp-item-row { display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line); }
+.vp-item-row:last-child { border-bottom:none; }
+.vp-qty-btn { width:26px;height:26px;border:1px solid var(--line);background:none;color:var(--ink);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center; }
+.vp-success { padding:32px 24px;display:flex;flex-direction:column;align-items:center;text-align:center; }
 </style>
