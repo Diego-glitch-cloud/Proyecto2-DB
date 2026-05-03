@@ -2,6 +2,7 @@
 
 const bcrypt = require('bcryptjs')
 const pool = require('../db')
+const authenticate = require('../hooks/authenticate')
 
 
 async function authRoutes(fastify) {
@@ -125,6 +126,12 @@ async function authRoutes(fastify) {
     })
 
     return reply.send({ token, rol: persona.rol, nombre: persona.nombre })
+  })
+
+
+  // ── GET /api/auth/me ───────────────────────────────────────────────────────
+  fastify.get('/api/auth/me', { preHandler: authenticate }, async (request) => {
+    return request.user
   })
 }
 
