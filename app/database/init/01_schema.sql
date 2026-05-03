@@ -253,7 +253,7 @@ SELECT
     c.fecha,
     cli.id                                            AS id_cliente,
     COALESCE(pe_cli.nombre, c.nombre_cf)              AS nombre_cliente,
-    COALESCE(cli.NIT,       c.nit_cf)                 AS nit_cliente,
+    COALESCE(c.nit_cf,      cli.NIT)                  AS nit_cliente,
     pe_emp.nombre                                     AS nombre_empleado,
     p.id                                              AS id_producto,
     art.nombre                                        AS nombre_artista,

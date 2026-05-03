@@ -156,7 +156,7 @@ INSERT INTO Persona (id, nombre, correo, contrasena, id_rol) VALUES
 (10, 'Valeria Morales',     'valeria.morales@tiendamusical.gt',   '$2a$12$pCvNMBxu/ExeVMDwn2VJ8e2KbiBSCroqwKFuAIOpcxfcGraGZW44i', 2),
 (11, 'José Hernández',      'jose.hernandez@tiendamusical.gt',    '$2a$12$pCvNMBxu/ExeVMDwn2VJ8e2KbiBSCroqwKFuAIOpcxfcGraGZW44i', 2),
 (12, 'Andrea Vásquez',      'andrea.vasquez@tiendamusical.gt',    '$2a$12$pCvNMBxu/ExeVMDwn2VJ8e2KbiBSCroqwKFuAIOpcxfcGraGZW44i', 2),
-(13, 'Pablo Reyes',         'pablo.reyes@tiendamusical.gt',       '$2a$12$pCvNMBxu/ExeVMDwn2VJ8e2KbiBSCroqwKFuAIOpcxfcGraGZW44i', 2),
+(13, 'Marcela Gatica',      'marcela.gatica@tiendamusical.gt',       '$2a$12$pCvNMBxu/ExeVMDwn2VJ8e2KbiBSCroqwKFuAIOpcxfcGraGZW44i', 2),
 (14, 'Claudia Ruiz',        'claudia.ruiz@tiendamusical.gt',      '$2a$12$pCvNMBxu/ExeVMDwn2VJ8e2KbiBSCroqwKFuAIOpcxfcGraGZW44i', 2),
 (15, 'Eduardo Flores',      'eduardo.flores@tiendamusical.gt',    '$2a$12$pCvNMBxu/ExeVMDwn2VJ8e2KbiBSCroqwKFuAIOpcxfcGraGZW44i', 2),
 (16, 'Daniela Cruz',        'daniela.cruz@tiendamusical.gt',      '$2a$12$pCvNMBxu/ExeVMDwn2VJ8e2KbiBSCroqwKFuAIOpcxfcGraGZW44i', 2),

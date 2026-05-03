@@ -178,8 +178,15 @@
                   <input v-model="correoBusqueda" class="vp-field" placeholder="correo@ejemplo.com" style="flex:1" @keyup.enter="buscarClientePorCorreo"/>
                   <button class="btn btn-ghost" style="height:38px;font-size:9px;padding:0 12px;flex-shrink:0" @click="buscarClientePorCorreo">VERIFICAR</button>
                 </div>
-                <p v-if="clienteEncontrado" class="eyebrow brass" style="margin-top:6px">✓ {{ clienteEncontrado.nombre }} · NIT {{ clienteEncontrado.NIT }}</p>
-                <p v-if="correoError"       class="eyebrow velvet" style="margin-top:6px">✗ {{ correoError }}</p>
+                <div v-if="clienteEncontrado" style="margin-top:8px">
+                  <p class="eyebrow brass">✓ {{ clienteEncontrado.nombre }} · NIT {{ clienteEncontrado.NIT }}</p>
+                  <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer">
+                    <input type="checkbox" v-model="usarNitDistinto" style="accent-color:var(--brass);width:14px;height:14px"/>
+                    <span class="eyebrow mute" style="font-size:9px">FACTURAR A NIT DIFERENTE PARA ESTA VENTA</span>
+                  </label>
+                  <input v-if="usarNitDistinto" v-model="nitCF" class="vp-field" placeholder="NIT de facturación" style="margin-top:8px"/>
+                </div>
+                <p v-if="correoError" class="eyebrow velvet" style="margin-top:6px">✗ {{ correoError }}</p>
               </div>
               <div v-else style="display:flex;gap:10px;margin-top:10px">
                 <input v-model="nombreCF" class="vp-field" placeholder="Nombre del cliente" style="flex:1"/>
@@ -263,6 +270,7 @@ const tipoCliente       = ref('cuenta')   // 'cuenta' | 'cf'
 const correoBusqueda    = ref('')
 const clienteEncontrado = ref(null)
 const correoError       = ref('')
+const usarNitDistinto   = ref(false)
 const nombreCF          = ref('')
 const nitCF             = ref('CF')
 const productoBusqueda  = ref('')
@@ -365,6 +373,7 @@ function cerrarVentaModal() {
   correoBusqueda.value    = ''
   clienteEncontrado.value = null
   correoError.value       = ''
+  usarNitDistinto.value   = false
   nombreCF.value          = ''
   nitCF.value             = 'CF'
   productoBusqueda.value  = ''
@@ -409,6 +418,7 @@ async function confirmarVenta() {
     }
     if (tipoCliente.value === 'cuenta') {
       body.correo = correoBusqueda.value.trim()
+      if (usarNitDistinto.value && nitCF.value.trim()) body.nit_cf = nitCF.value.trim()
     } else {
       body.nombre_cf = nombreCF.value.trim()
       body.nit_cf    = nitCF.value.trim() || 'CF'

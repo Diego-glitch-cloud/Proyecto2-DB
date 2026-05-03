@@ -223,6 +223,9 @@ async function ventasRoutes(fastify) {
       return reply.code(400).send({ error: 'Debe indicar el correo del cliente o el nombre para CF' })
     }
 
+    // nit_cf puede llegar aunque haya correo: significa que el cliente quiere
+    // facturar a un NIT diferente al de su perfil solo para esta venta.
+
     const conn = await pool.getConnection()
     try {
       // Resolver id_empleado del JWT
@@ -253,6 +256,9 @@ async function ventasRoutes(fastify) {
           return reply.code(422).send({ error: `La cuenta ${correo} no tiene perfil de cliente` })
         }
         id_cliente = clienteFila.id
+        // Si el vendedor especificó un NIT distinto para esta venta, guardarlo.
+        // La vista usa COALESCE(nit_cf, cli.NIT), así que nit_cf tiene prioridad.
+        if (nit_cf) nit_cf_final = nit_cf
       } else {
         nombre_cf_final = nombre_cf
         nit_cf_final    = nit_cf || 'CF'
