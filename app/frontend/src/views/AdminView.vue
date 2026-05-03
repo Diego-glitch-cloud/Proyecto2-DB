@@ -28,6 +28,7 @@
             <p class="f-serif page-sub">Estado actual del sistema — datos en tiempo real.</p>
           </div>
           <div style="display:flex;gap:10px;align-items:center">
+            <button v-if="auth.user?.rol === 'admin'" class="btn btn-ghost" style="height:40px" @click="abrirEmpModal">+ EMPLEADO</button>
             <button class="btn btn-primary" style="height:40px" @click="showVentaModal = true">+ VENTA PRESENCIAL</button>
             <RouterLink to="/admin/ventas" class="btn btn-ghost" style="height:40px;text-decoration:none">REPORTE VENTAS →</RouterLink>
             <RouterLink to="/admin/inventario" class="btn btn-ghost" style="height:40px;text-decoration:none">+ AGREGAR PRODUCTO</RouterLink>
@@ -131,6 +132,72 @@
       </div>
     </div>
   </div>
+
+  <!-- ── MODAL: REGISTRAR EMPLEADO ───────────────────────────────────── -->
+  <Teleport to="body">
+    <div v-if="showEmpModal" class="vp-overlay" @click.self="cerrarEmpModal">
+      <div class="vp-modal">
+
+        <template v-if="empExito">
+          <div class="vp-success">
+            <p class="eyebrow brass" style="margin-bottom:8px">✓ EMPLEADO REGISTRADO</p>
+            <p class="f-display" style="font-size:28px">{{ empExito.nombre }}</p>
+            <p class="eyebrow mute" style="margin-top:6px">{{ empExito.correo }}</p>
+            <p class="eyebrow" style="margin-top:4px;color:var(--brass)">{{ empExito.rol.toUpperCase() }} · DPI {{ empExito.DPI }}</p>
+            <button class="btn btn-primary" style="width:100%;height:44px;margin-top:24px" @click="cerrarEmpModal">CERRAR</button>
+          </div>
+        </template>
+
+        <template v-else>
+          <div class="vp-header hairline-b">
+            <div>
+              <p class="eyebrow brass">● NUEVO EMPLEADO</p>
+              <h2 class="f-display" style="font-size:22px;margin-top:2px">Registrar <em class="accent">staff</em></h2>
+            </div>
+            <button class="rail-btn" @click="cerrarEmpModal"><X :size="18" :stroke-width="1.4"/></button>
+          </div>
+
+          <div class="vp-body">
+            <div class="vp-section">
+              <!-- Rol -->
+              <div class="vp-tabs" style="margin-bottom:16px">
+                <button :class="['vp-tab', empForm.rol==='vendedor' && 'active']" @click="empForm.rol='vendedor'">VENDEDOR</button>
+                <button :class="['vp-tab', empForm.rol==='admin'    && 'active']" @click="empForm.rol='admin'">ADMIN</button>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div>
+                  <p class="eyebrow mute" style="font-size:9px;margin-bottom:4px">NOMBRE COMPLETO</p>
+                  <input v-model="empForm.nombre" class="vp-field" placeholder="Nombre del empleado" />
+                </div>
+                <div>
+                  <p class="eyebrow mute" style="font-size:9px;margin-bottom:4px">CORREO ELECTRÓNICO</p>
+                  <input v-model="empForm.correo" class="vp-field" placeholder="correo@tienda.com" type="email" />
+                </div>
+                <div>
+                  <p class="eyebrow mute" style="font-size:9px;margin-bottom:4px">CONTRASEÑA INICIAL</p>
+                  <input v-model="empForm.contrasena" class="vp-field" placeholder="Mín. 6 caracteres" type="password" />
+                </div>
+                <div>
+                  <p class="eyebrow mute" style="font-size:9px;margin-bottom:4px">DPI (13 dígitos)</p>
+                  <input v-model="empForm.DPI" class="vp-field" placeholder="1234567890123" maxlength="13" />
+                </div>
+              </div>
+
+              <p v-if="empError" class="eyebrow velvet" style="margin-top:12px">✗ {{ empError }}</p>
+
+              <button class="btn btn-primary" style="width:100%;height:46px;margin-top:18px"
+                      :disabled="empLoading || !empForm.nombre || !empForm.correo || !empForm.contrasena || empForm.DPI.length !== 13"
+                      @click="registrarEmpleado">
+                {{ empLoading ? 'REGISTRANDO…' : 'REGISTRAR EMPLEADO →' }}
+              </button>
+            </div>
+          </div>
+        </template>
+
+      </div>
+    </div>
+  </Teleport>
 
   <!-- ── MODAL: VENTA PRESENCIAL ──────────────────────────────────────── -->
   <Teleport to="body">
@@ -263,6 +330,30 @@ const auth   = useAuthStore()
 const stats     = ref({})
 const ventas    = ref([])
 const productos = ref([])
+
+// ── Registro de empleado ─────────────────────────────────────────────────
+const showEmpModal = ref(false)
+const empForm      = ref({ nombre: '', correo: '', contrasena: '', DPI: '', rol: 'vendedor' })
+const empLoading   = ref(false)
+const empError     = ref('')
+const empExito     = ref(null)
+
+function abrirEmpModal()  { showEmpModal.value = true; empError.value = ''; empExito.value = null; empForm.value = { nombre:'', correo:'', contrasena:'', DPI:'', rol:'vendedor' } }
+function cerrarEmpModal() { showEmpModal.value = false }
+
+async function registrarEmpleado() {
+  empError.value = ''; empLoading.value = true
+  try {
+    const { data } = await api.post('/admin/empleados', empForm.value)
+    empExito.value = data
+    const s = await api.get('/stats/publico').then(r => r.data)
+    stats.value = s
+  } catch (err) {
+    empError.value = err.response?.data?.error ?? 'Error al registrar empleado'
+  } finally {
+    empLoading.value = false
+  }
+}
 
 // ── Venta presencial ──────────────────────────────────────────────────────
 const showVentaModal    = ref(false)
