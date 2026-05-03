@@ -30,7 +30,10 @@ fastify.get('/api/health', async () => ({
 // Verifica conectividad real con la DB en runtime
 fastify.get('/api/health-db', async (request, reply) => {
   try {
-    const [[row]] = await pool.execute('SELECT 1 AS connected')
+    // Agregamos un timeout simple para evitar que la petición quede colgada
+    const connection = await pool.getConnection()
+    const [[row]] = await connection.execute('SELECT 1 AS connected')
+    connection.release()
     return { status: 'ok', db_connected: row.connected === 1 }
   } catch (err) {
     fastify.log.error(err)
