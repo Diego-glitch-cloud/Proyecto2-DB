@@ -9,6 +9,7 @@ const jwt = require('@fastify/jwt')
 const authRoutes = require('./routes/auth')
 const catalogosRoutes = require('./routes/catalogos')
 const albumsRoutes = require('./routes/albums')
+const productosRoutes = require('./routes/productos')
 const pool = require('./db')
 
 const fastify = Fastify({ logger: true })
@@ -22,6 +23,7 @@ fastify.register(jwt, { secret: process.env.JWT_SECRET })
 fastify.register(authRoutes)
 fastify.register(catalogosRoutes)
 fastify.register(albumsRoutes)
+fastify.register(productosRoutes)
 
 // ── MANEJADOR GLOBAL DE ERRORES ────────────────────────────────────────────
 fastify.setErrorHandler((error, request, reply) => {
