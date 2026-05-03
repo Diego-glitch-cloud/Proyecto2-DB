@@ -1,5 +1,11 @@
 <template>
-  <div>
-    <h1>Tienda Musical</h1>
-  </div>
+  <RouterView />
+  <Toast position="bottom-right" />
 </template>
+
+<script setup>
+import { useThemeStore } from '@/stores/theme.js'
+import Toast from 'primevue/toast'
+
+useThemeStore()
+</script>
