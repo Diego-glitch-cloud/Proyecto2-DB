@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/api/index.js'
+import { useWishlistStore } from '@/stores/wishlist.js'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || null)
@@ -9,12 +10,18 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value)
   const isStaff = computed(() => ['admin', 'vendedor'].includes(user.value?.rol))
 
+  function _decodeJwt(t) {
+    try { return JSON.parse(atob(t.split('.')[1])) } catch { return {} }
+  }
+
   async function login(correo, contrasena) {
-    const { data } = await api.post('/auth/login', { correo, contrasena })
-    token.value = data.token
-    user.value  = { nombre: data.nombre, rol: data.rol }
+    const { data }   = await api.post('/auth/login', { correo, contrasena })
+    const payload    = _decodeJwt(data.token)
+    token.value      = data.token
+    user.value       = { nombre: data.nombre, rol: data.rol, id: payload.id }
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(user.value))
+    useWishlistStore().loadForUser(payload.id)
     return data.rol
   }
 
@@ -23,6 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function logout() {
+    useWishlistStore().clearForCurrentUser()
     token.value = null
     user.value  = null
     localStorage.removeItem('token')

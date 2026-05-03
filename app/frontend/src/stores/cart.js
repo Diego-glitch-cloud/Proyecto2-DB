@@ -13,7 +13,7 @@ export const useCartStore = defineStore('cart', () => {
   function add(producto) {
     const existing = items.value.find(i => i.id === producto.id)
     if (existing) {
-      existing.cantidad = Math.min(existing.cantidad + 1, producto.stock)
+      existing.cantidad = Math.min(existing.cantidad + 1, producto.stock ?? Infinity)
     } else {
       items.value.push({ ...producto, cantidad: 1 })
     }

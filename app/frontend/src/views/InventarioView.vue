@@ -67,7 +67,8 @@
                   <div class="actions">
                     <template v-if="editing !== p.id">
                       <button class="eyebrow act-btn" @click="startEdit(p)">EDITAR</button>
-                      <button class="eyebrow act-btn danger" @click="confirmDelete(p)">ELIMINAR</button>
+                      <button class="eyebrow act-btn" style="color:var(--brass)" @click="openStockAdj(p)">STOCK −</button>
+                      <button class="eyebrow act-btn danger" @click="confirmDelete(p)" title="Elimina el registro completo">BORRAR</button>
                     </template>
                     <template v-else>
                       <button class="eyebrow act-btn" @click="saveEdit(p.id)" :disabled="saving">GUARDAR</button>
@@ -173,25 +174,62 @@
       </div>
     </Transition>
 
+    <!-- Ajuste de stock -->
+    <Transition name="fade">
+      <div v-if="stockAdjTarget" class="modal-overlay" @click.self="stockAdjTarget = null">
+        <div class="modal hairline" style="max-width:360px">
+          <div class="modal-head hairline-b">
+            <p class="eyebrow brass">● AJUSTAR STOCK</p>
+            <button @click="stockAdjTarget = null"><X :size="16" /></button>
+          </div>
+          <div class="modal-body">
+            <p class="f-serif" style="font-size:15px">
+              <strong>{{ stockAdjTarget.titulo_album }}</strong> — Stock actual:
+              <span class="f-display brass" style="font-size:18px">{{ stockAdjTarget.stock }}</span>
+            </p>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
+              <label class="eyebrow" style="color:var(--mute)">REDUCIR EN</label>
+              <input v-model.number="stockAdjAmount" type="number" min="1" :max="stockAdjTarget.stock"
+                     class="inline-input" style="width:80px;text-align:center" />
+              <span class="eyebrow mute">UNIDADES</span>
+            </div>
+            <p class="eyebrow" style="color:var(--mute);font-size:9px;margin-top:8px">
+              Nuevo stock: {{ Math.max(0, (stockAdjTarget.stock || 0) - (stockAdjAmount || 0)) }}
+            </p>
+            <p v-if="stockAdjError" class="eyebrow" style="color:var(--velvet);font-size:9px;margin-top:6px">{{ stockAdjError }}</p>
+            <div style="display:flex;gap:10px;margin-top:20px">
+              <button class="btn btn-outline" style="flex:1;height:44px" @click="stockAdjTarget = null">CANCELAR</button>
+              <button class="btn btn-primary" style="flex:1;height:44px" @click="doStockAdj" :disabled="stockAdjSaving || stockAdjAmount < 1">
+                {{ stockAdjSaving ? 'GUARDANDO…' : 'APLICAR' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- Delete confirmation -->
     <Transition name="fade">
       <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
         <div class="modal hairline" style="max-width:400px">
           <div class="modal-head hairline-b">
-            <p class="eyebrow velvet">● CONFIRMAR ELIMINACIÓN</p>
+            <p class="eyebrow velvet">● ELIMINAR REGISTRO</p>
             <button @click="deleteTarget = null"><X :size="16" /></button>
           </div>
           <div class="modal-body">
             <p class="f-serif" style="font-size:16px">
-              ¿Eliminar <strong>{{ deleteTarget.titulo_album }}</strong> ({{ deleteTarget.tipo_formato }}) del inventario?
+              ¿Eliminar <strong>{{ deleteTarget.titulo_album }}</strong> ({{ deleteTarget.tipo_formato }}) del catálogo?
             </p>
-            <p class="eyebrow" style="color:var(--mute);margin-top:8px">Esta acción no se puede deshacer.</p>
+            <p class="eyebrow" style="color:var(--mute);margin-top:8px">
+              Elimina el producto completo. Solo funciona si no tiene ventas registradas.
+              Para reducir unidades usa el botón <strong style="color:var(--brass)">STOCK −</strong>.
+            </p>
             <p v-if="deleteError" class="eyebrow" style="color:var(--velvet);font-size:9px;margin-top:8px">{{ deleteError }}</p>
             <div style="display:flex;gap:10px;margin-top:20px">
               <button class="btn btn-outline" style="flex:1;height:44px" @click="deleteTarget = null">CANCELAR</button>
               <button class="btn btn-primary" style="flex:1;height:44px;background:var(--velvet)"
                       @click="doDelete" :disabled="deleting">
-                {{ deleting ? 'ELIMINANDO…' : 'ELIMINAR' }}
+                {{ deleting ? 'ELIMINANDO…' : 'ELIMINAR REGISTRO' }}
               </button>
             </div>
           </div>
@@ -236,6 +274,11 @@ const deleteTarget = ref(null)
 const deleteError  = ref('')
 const deleting     = ref(false)
 
+const stockAdjTarget = ref(null)
+const stockAdjAmount = ref(1)
+const stockAdjError  = ref('')
+const stockAdjSaving = ref(false)
+
 const newProducto = ref({ precio: 0, stock: 0, id_album_tipo: null, id_categoria: null, id_proveedor: null })
 
 const filteredProds = computed(() => {
@@ -271,6 +314,29 @@ async function saveEdit(id) {
 }
 
 function confirmDelete(p) { deleteTarget.value = p; deleteError.value = '' }
+
+function openStockAdj(p) {
+  stockAdjTarget.value = p
+  stockAdjAmount.value = 1
+  stockAdjError.value  = ''
+}
+
+async function doStockAdj() {
+  const amt = stockAdjAmount.value
+  if (!amt || amt < 1) return
+  stockAdjSaving.value = true; stockAdjError.value = ''
+  const nuevoStock = Math.max(0, (stockAdjTarget.value.stock || 0) - amt)
+  try {
+    const { data } = await api.patch(`/productos/${stockAdjTarget.value.id}`, { stock: nuevoStock })
+    const idx = products.value.findIndex(p => p.id === stockAdjTarget.value.id)
+    if (idx >= 0) products.value[idx] = data
+    stockAdjTarget.value = null
+  } catch (e) {
+    stockAdjError.value = e.response?.data?.error || 'No se pudo ajustar el stock'
+  } finally {
+    stockAdjSaving.value = false
+  }
+}
 
 async function doDelete() {
   deleting.value = true; deleteError.value = ''

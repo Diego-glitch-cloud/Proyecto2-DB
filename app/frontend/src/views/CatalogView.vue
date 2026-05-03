@@ -2,6 +2,12 @@
   <div class="catalog-root">
     <PosterStrip left="MEMBER LOUNGE ✦ CATÁLOGO COMPLETO ✦ NUEVA PRENSA ESTA SEMANA" :right="dateStr" />
 
+    <!-- Barra de regreso para admin/vendedor -->
+    <div v-if="auth.isStaff" class="admin-back-bar">
+      <span class="eyebrow" style="color:rgba(242,233,218,.6)">VISTA DE CLIENTE</span>
+      <RouterLink to="/admin" class="eyebrow" style="color:#F2E9DA;text-decoration:none">← VOLVER AL PANEL DE ADMIN</RouterLink>
+    </div>
+
     <!-- Nav -->
     <nav class="nav hairline-b">
       <BLogo :size="20" />
@@ -86,7 +92,7 @@
         </div>
         <div class="grid-catalog">
           <div v-for="p in filtered" :key="p.id" class="card-wrap" @click="selectProduct(p)">
-            <AlbumCard :producto="p" :isNew="p.stock > 8"
+            <AlbumCard :producto="p"
                        @add.stop="addToCart(p)" />
           </div>
         </div>
@@ -264,6 +270,8 @@ onMounted(async () => {
 
 <style scoped>
 .catalog-root { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+
+.admin-back-bar { display:flex; align-items:center; justify-content:space-between; padding:8px 32px; background:var(--velvet); flex-shrink:0; }
 
 .nav {
   display:flex; align-items:center; gap:24px;

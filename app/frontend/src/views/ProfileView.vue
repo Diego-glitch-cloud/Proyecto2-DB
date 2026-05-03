@@ -70,7 +70,8 @@
           <p v-if="!wishlist.items.length" class="eyebrow" style="color:var(--mute);padding:16px 0">
             TU WISHLIST ESTÁ VACÍA
           </p>
-          <div v-for="item in wishlist.items" :key="item.id" class="wish-row dashed-b">
+          <div v-for="item in wishlist.items" :key="item.id" class="wish-row dashed-b"
+               style="cursor:pointer" @click="wishSelected = item">
             <AlbumCover :album="{ titulo: item.titulo_album, artista: item.artista, url_portada: item.url_portada }" :size="48" />
             <div style="flex:1">
               <p class="f-display" style="font-size:14px;line-height:1.1">{{ item.titulo_album }}</p>
@@ -78,8 +79,7 @@
             </div>
             <div style="text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end">
               <span class="f-display brass" style="font-size:16px">Q {{ Number(item.precio).toLocaleString('es-GT') }}</span>
-              <button class="eyebrow" style="color:var(--velvet);background:none;border:none;cursor:pointer;font-size:9px"
-                      @click="wishlist.toggle(item)">QUITAR</button>
+              <span class="eyebrow mute" style="font-size:9px">VER DETALLES →</span>
             </div>
           </div>
         </div>
@@ -120,13 +120,43 @@
 
     </div>
   </div>
+
+  <!-- Panel de detalle de item de wishlist -->
+  <Transition name="panel">
+    <div v-if="wishSelected" class="wdetail-overlay" @click.self="wishSelected = null">
+      <div class="wdetail-panel hairline">
+        <button class="eyebrow" style="align-self:flex-end;color:var(--mute);background:none;border:none;cursor:pointer;font-size:10px" @click="wishSelected = null">✕ CERRAR</button>
+        <div style="display:flex;justify-content:center;margin-bottom:16px">
+          <AlbumCover :album="{ titulo: wishSelected.titulo_album, artista: wishSelected.artista, url_portada: wishSelected.url_portada }" :size="220" />
+        </div>
+        <p class="eyebrow velvet">{{ wishSelected.tipo_formato }}</p>
+        <h2 class="f-display" style="font-size:28px;line-height:1.1;margin-top:6px">{{ wishSelected.titulo_album }}</h2>
+        <p class="f-serif" style="font-size:18px;color:var(--mute);margin-top:4px">{{ wishSelected.artista }}</p>
+        <p class="f-display" style="font-size:38px;color:var(--brass);margin-top:14px">
+          Q {{ Number(wishSelected.precio).toLocaleString('es-GT') }}
+        </p>
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <button class="btn btn-primary" style="flex:1;height:52px"
+                  @click="addWishToCart(wishSelected)">
+            + AGREGAR A LA BOLSA
+          </button>
+          <button class="btn btn-outline" style="height:52px;width:52px;padding:0;color:var(--velvet);border-color:var(--velvet)"
+                  @click="wishlist.toggle(wishSelected); wishSelected = null">
+            ♥
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from 'primevue/usetoast'
 import { useAuthStore }    from '@/stores/auth.js'
 import { useWishlistStore } from '@/stores/wishlist.js'
+import { useCartStore }    from '@/stores/cart.js'
 import api from '@/api/index.js'
 import PosterStrip from '@/components/PosterStrip.vue'
 import BLogo       from '@/components/BLogo.vue'
@@ -136,6 +166,15 @@ import FormatChip  from '@/components/FormatChip.vue'
 const router   = useRouter()
 const auth     = useAuthStore()
 const wishlist = useWishlistStore()
+const cart     = useCartStore()
+const toast    = useToast()
+const wishSelected = ref(null)
+
+function addWishToCart(item) {
+  cart.add(item)
+  toast.add({ severity: 'success', summary: 'Agregado a la bolsa', detail: item.titulo_album, life: 2000 })
+  wishSelected.value = null
+}
 
 const perfil       = ref(null)
 const compras      = ref([])
@@ -212,4 +251,14 @@ onMounted(async () => {
 .compra-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
 .compra-items { display:flex; flex-direction:column; gap:6px; }
 .compra-item { display:flex; align-items:center; gap:10px; }
+
+.wdetail-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:100; display:flex; justify-content:flex-end; }
+.wdetail-panel { width:460px; height:100%; background:var(--paper); overflow-y:auto; padding:28px; display:flex; flex-direction:column; gap:12px; }
+.panel-enter-active, .panel-leave-active { transition:opacity 200ms; }
+.panel-enter-active .wdetail-panel, .panel-leave-active .wdetail-panel { transition:transform 220ms ease; }
+.panel-enter-from { opacity:0; }
+.panel-leave-to  { opacity:0; }
+.panel-enter-from .wdetail-panel { transform:translateX(100%); }
+.panel-leave-to  .wdetail-panel  { transform:translateX(100%); }
+.mute { color:var(--mute); }
 </style>

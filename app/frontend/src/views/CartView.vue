@@ -60,28 +60,42 @@
           <!-- Recoger en tienda -->
           <label class="option-row">
             <input type="checkbox" v-model="recogerEnTienda" class="checkbox" />
-            <span class="eyebrow">RECOGER EN TIENDA</span>
+            <span class="eyebrow">RECOGER EN TIENDA (SIN ENVÍO)</span>
           </label>
 
           <template v-if="!recogerEnTienda">
-            <div class="field">
-              <label>NIT de facturación</label>
-              <input v-model="nit" :placeholder="perfil?.NIT || 'CF'" />
-              <span v-if="perfil?.NIT" class="field-hint eyebrow">
-                Predeterminado: {{ perfil.NIT }}
-              </span>
+            <!-- Fuente de datos: guardados vs manual -->
+            <div class="datos-source">
+              <p class="eyebrow" style="color:var(--mute);font-size:10px;margin-bottom:8px">DATOS DE FACTURACIÓN Y ENTREGA</p>
+              <label class="option-row" style="padding:10px 12px;border:1px solid var(--line);margin-bottom:6px" :style="datosSource==='saved' ? 'border-color:var(--brass)' : ''">
+                <input type="radio" v-model="datosSource" value="saved" class="checkbox" />
+                <div>
+                  <span class="eyebrow" style="color:var(--ink)">USAR DATOS GUARDADOS</span>
+                  <span class="eyebrow" style="display:block;color:var(--mute);font-size:9px;margin-top:3px">
+                    NIT: {{ perfil?.NIT || 'CF' }} · {{ perfil?.direccion || 'Sin dirección registrada' }}
+                  </span>
+                </div>
+              </label>
+              <label class="option-row" style="padding:10px 12px;border:1px solid var(--line)" :style="datosSource==='custom' ? 'border-color:var(--brass)' : ''">
+                <input type="radio" v-model="datosSource" value="custom" class="checkbox" />
+                <span class="eyebrow" style="color:var(--ink)">INGRESAR DATOS PARA ESTA COMPRA</span>
+              </label>
             </div>
-            <div class="field">
-              <label>Dirección de entrega <span style="color:var(--mute)">(opcional)</span></label>
-              <input v-model="direccion" :placeholder="perfil?.direccion || 'Sin dirección registrada'" />
-              <span v-if="perfil?.direccion" class="field-hint eyebrow">
-                Predeterminada: {{ perfil.direccion }}
-              </span>
-            </div>
-            <label class="option-row" style="margin-top:0">
-              <input type="checkbox" v-model="actualizarPerfil" class="checkbox" />
-              <span class="eyebrow">GUARDAR COMO PREDETERMINADOS</span>
-            </label>
+
+            <template v-if="datosSource === 'custom'">
+              <div class="field">
+                <label>NIT de facturación</label>
+                <input v-model="nit" :placeholder="perfil?.NIT || 'CF'" />
+              </div>
+              <div class="field">
+                <label>Dirección de entrega <span style="color:var(--mute)">(opcional)</span></label>
+                <input v-model="direccion" :placeholder="perfil?.direccion || 'Sin dirección'" />
+              </div>
+              <label class="option-row" style="margin-top:0">
+                <input type="checkbox" v-model="actualizarPerfil" class="checkbox" />
+                <span class="eyebrow">GUARDAR COMO NUEVOS PREDETERMINADOS</span>
+              </label>
+            </template>
           </template>
 
           <div class="total-box hairline-t">
@@ -101,13 +115,64 @@
 
           <p v-if="errorMsg" class="eyebrow" style="color:var(--velvet);font-size:10px">{{ errorMsg }}</p>
 
-          <button class="btn btn-primary" style="width:100%;height:52px" @click="checkout" :disabled="loading">
-            {{ loading ? 'PROCESANDO…' : 'CONFIRMAR PEDIDO →' }}
+          <button class="btn btn-primary" style="width:100%;height:52px" @click="showConfirm = true" :disabled="loading || !cart.items.length">
+            REVISAR Y CONFIRMAR →
           </button>
         </div>
       </div>
 
     </div>
+
+    <!-- Modal: confirmar antes de comprar -->
+    <Transition name="fade">
+      <div v-if="showConfirm" class="confirm-overlay" @click.self="showConfirm = false">
+        <div class="confirm-card hairline">
+          <p class="eyebrow velvet" style="font-size:10px">● CONFIRMAR PEDIDO</p>
+          <h2 class="f-display" style="font-size:28px;margin-top:10px">¿Todo correcto?</h2>
+
+          <!-- Items -->
+          <div class="confirm-items" style="margin-top:16px">
+            <div v-for="item in cart.items" :key="item.id" class="eyebrow confirm-item">
+              {{ item.titulo_album }} ({{ item.tipo_formato }}) × {{ item.cantidad }} —
+              <span class="brass">Q {{ (Number(item.precio) * item.cantidad).toLocaleString('es-GT') }}</span>
+            </div>
+          </div>
+
+          <!-- Datos de entrega -->
+          <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:6px">
+            <div class="eyebrow confirm-item">
+              <span>CLIENTE</span>
+              <span style="color:var(--ink)">{{ perfil?.nombre }}</span>
+            </div>
+            <div class="eyebrow confirm-item" v-if="!recogerEnTienda">
+              <span>NIT</span>
+              <span style="color:var(--ink)">{{ datosSource === 'saved' ? (perfil?.NIT || 'CF') : (nit || 'CF') }}</span>
+            </div>
+            <div class="eyebrow confirm-item" v-if="!recogerEnTienda && (datosSource === 'saved' ? perfil?.direccion : direccion)">
+              <span>DIRECCIÓN</span>
+              <span style="color:var(--ink)">{{ datosSource === 'saved' ? perfil?.direccion : direccion }}</span>
+            </div>
+            <div class="eyebrow confirm-item">
+              <span>ENVÍO</span>
+              <span style="color:var(--brass)">{{ recogerEnTienda ? 'RECOGER EN TIENDA' : 'A COORDINAR' }}</span>
+            </div>
+          </div>
+
+          <p class="f-display brass" style="font-size:28px;text-align:right;margin-top:16px">
+            Total: Q {{ cart.total }}
+          </p>
+
+          <p v-if="errorMsg" class="eyebrow" style="color:var(--velvet);font-size:10px;margin-top:8px">{{ errorMsg }}</p>
+
+          <div style="display:flex;gap:10px;margin-top:20px">
+            <button class="btn btn-outline" style="flex:1;height:44px" @click="showConfirm = false">CANCELAR</button>
+            <button class="btn btn-primary" style="flex:1;height:44px" @click="checkout" :disabled="loading">
+              {{ loading ? 'PROCESANDO…' : 'CONFIRMAR →' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Confirmación -->
     <Transition name="fade">
@@ -159,6 +224,8 @@ const confirmacion = ref(null)
 
 const recogerEnTienda  = ref(false)
 const actualizarPerfil = ref(false)
+const datosSource      = ref('saved')   // 'saved' | 'custom'
+const showConfirm      = ref(false)
 const nit      = ref('')
 const direccion = ref('')
 
@@ -180,8 +247,8 @@ onMounted(async () => {
 async function checkout() {
   errorMsg.value = ''; loading.value = true
   try {
-    // Actualizar perfil si se pidió
-    if (actualizarPerfil.value && !recogerEnTienda.value) {
+    // Si eligió datos manuales y quiere guardarlos como predeterminados
+    if (datosSource.value === 'custom' && actualizarPerfil.value && !recogerEnTienda.value) {
       await api.patch('/clientes/mi-perfil', {
         NIT:       nit.value      || undefined,
         direccion: direccion.value || null
@@ -191,6 +258,7 @@ async function checkout() {
     const items = cart.items.map(i => ({ id_producto: i.id, cantidad: i.cantidad }))
     const { data } = await api.post('/ventas', { items })
 
+    showConfirm.value  = false
     confirmacion.value = data
     cart.clear()
   } catch (e) {
@@ -244,6 +312,8 @@ async function checkout() {
 .checkbox { width:14px; height:14px; cursor:pointer; accent-color:var(--velvet); }
 
 .field-hint { font-size:8px; letter-spacing:.18em; color:var(--mute); margin-top:2px; display:block; }
+.datos-source { display:flex; flex-direction:column; }
+.confirm-item { display:flex; justify-content:space-between; gap:12px; color:var(--mute); font-size:10px; padding:3px 0; }
 
 .total-box { display:flex; flex-direction:column; gap:10px; padding-top:14px; }
 .total-row { display:flex; justify-content:space-between; align-items:center; }

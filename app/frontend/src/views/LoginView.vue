@@ -12,14 +12,14 @@
         <div class="bleed-4">4</div>
         <div class="left-inner">
           <BLogo :size="24" caption="TIENDA MUSICAL" />
-          <p class="eyebrow brass vol-label">VOL. XII · NOVIEMBRE MMXXV</p>
+          <p class="eyebrow brass vol-label">VOL. XII · MMXXV</p>
 
           <h1 class="headline">
             MUSIC<br /><em class="accent">4 U.</em>
           </h1>
 
           <p class="pull-quote">
-            Discos de primera prensa, ediciones limitadas y vinilos que
+            Discos de primera, ediciones limitadas y vinilos que
             no encontrarás en otro lugar. Curaduría desde Guatemala.
           </p>
 
