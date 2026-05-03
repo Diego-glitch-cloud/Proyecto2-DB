@@ -14,7 +14,7 @@ async function catalogosRoutes(fastify) {
   })
 
   // ── GET /api/generos ───────────────────────────────────────────────────────
-  // Géneros musicales que clasifican los álbumes (tabla Genero, no Categoria).
+  // Géneros musicales que clasifican los álbumes.
   fastify.get('/api/generos', async (request, reply) => {
     const [rows] = await pool.execute(
       'SELECT id, detalle FROM Genero ORDER BY detalle ASC'

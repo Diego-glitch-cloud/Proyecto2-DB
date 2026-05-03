@@ -21,6 +21,23 @@ fastify.register(jwt, { secret: process.env.JWT_SECRET })
 fastify.register(authRoutes)
 fastify.register(catalogosRoutes)
 
+// ── MANEJADOR GLOBAL DE ERRORES ────────────────────────────────────────────
+fastify.setErrorHandler((error, request, reply) => {
+  const statusCode = error.statusCode ?? 500
+
+  fastify.log.error(
+    { err: error, method: request.method, url: request.url },
+    'Request error' 
+  )
+
+  if (statusCode >= 500) {
+    return reply.code(statusCode).send({ error: 'Error interno del servidor' })
+  }
+
+  // Errores de validación de JSON Schema (400)
+  return reply.code(statusCode).send({ error: error.message })
+})
+
 // Verifica que el proceso del servidor responde
 fastify.get('/api/health', async () => ({
   status: 'ok',
