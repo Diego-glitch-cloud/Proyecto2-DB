@@ -7,6 +7,7 @@ const cors = require('@fastify/cors')
 const jwt = require('@fastify/jwt')
 
 const authRoutes = require('./routes/auth')
+const catalogosRoutes = require('./routes/catalogos')
 const pool = require('./db')
 
 const fastify = Fastify({ logger: true })
@@ -17,8 +18,8 @@ fastify.register(cors, { origin: true })
 // El plugin JWT expone fastify.jwt.sign() y fastify.jwt.verify().
 fastify.register(jwt, { secret: process.env.JWT_SECRET })
 
-// Rutas de autenticación
 fastify.register(authRoutes)
+fastify.register(catalogosRoutes)
 
 // Verifica que el proceso del servidor responde
 fastify.get('/api/health', async () => ({
