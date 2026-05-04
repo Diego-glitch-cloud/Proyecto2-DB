@@ -160,17 +160,20 @@ Otros clientes en el seed: `mariana.pineda@gmail.com`, `kevin.estrada@hotmail.co
 
 ## Variables de entorno
 
+> **Nota académica sobre seguridad:** soy consciente de que incluir credenciales y variables de entorno en un archivo `README.md` es una mala práctica de seguridad en entornos productivos. Se incluyen aquí exclusivamente con fines de calificación académica para garantizar la portabilidad y el levantamiento inmediato del proyecto por parte del evaluador. El archivo `.env` real se encuentra correctamente excluido del repositorio mediante `.gitignore`.
+
 El archivo `.env.example` contiene todas las variables requeridas. Los valores de `DB_USER` y `DB_PASSWORD` están fijados para calificación y **no deben modificarse**:
 
 ```env
+DB_HOST=db
+DB_PORT=3306
+DB_NAME=tienda_db
 DB_USER=proy2
 DB_PASSWORD=secret
-DB_NAME=tienda_db
-DB_ROOT_PASSWORD=rootsecret
-DB_PORT=3306
+DB_ROOT_PASSWORD=root_secret
+JWT_SECRET=tienda_musical_jwt_secret_2026
 BACKEND_PORT=3000
 FRONTEND_PORT=80
-JWT_SECRET=supersecretjwt
 ```
 
 ---
