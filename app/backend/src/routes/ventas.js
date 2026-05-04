@@ -356,8 +356,8 @@ async function ventasRoutes(fastify) {
     const condiciones = []
     const params      = []
 
-    if (fecha_desde) { condiciones.push('v.fecha >= ?'); params.push(fecha_desde) }
-    if (fecha_hasta) { condiciones.push('v.fecha <= ?'); params.push(fecha_hasta) }
+    if (fecha_desde) { condiciones.push('v.fecha >= ?');        params.push(fecha_desde) }
+    if (fecha_hasta) { condiciones.push('v.fecha <= ?');        params.push(fecha_hasta + ' 23:59:59') }
 
     const WHERE = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : ''
 
