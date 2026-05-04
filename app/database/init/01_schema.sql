@@ -33,6 +33,66 @@ CREATE TABLE IF NOT EXISTS Proveedor (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- Catalogo musical
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS Artista (
+    id     INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    nombre VARCHAR(150) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_artista_nombre (nombre)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Album_Tipo diferencia el formato fisico del mismo album:
+-- 'Vinilo', 'CD', 'Cassette', 'Edicion Limitada'.
+CREATE TABLE IF NOT EXISTS Album_Tipo (
+    id      INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    detalle VARCHAR(50)  NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_album_tipo_detalle (detalle)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Genero clasifica musicalmente a los albums (N:M via Album_Genero).
+-- Separado de Categoria: Categoria es la etiqueta comercial del producto
+-- en el inventario; Genero es la clasificacion musical del album.
+CREATE TABLE IF NOT EXISTS Genero (
+    id      INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    detalle VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_genero_detalle (detalle)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- url_portada almacena el enlace externo a la imagen de portada
+-- (obtenido de la iTunes Search API). VARCHAR(1024) cubre holgadamente
+-- las URLs del CDN de Apple (is1-ssl.mzstatic.com, ~150-200 chars).
+-- anio usa tipo YEAR (MariaDB): 1 byte, rango 1901-2155, mostrado como YYYY.
+CREATE TABLE IF NOT EXISTS Album (
+    id          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    titulo      VARCHAR(200)  NOT NULL,
+    anio        YEAR          NOT NULL,
+    url_portada VARCHAR(1024)     NULL,
+    track_count INT UNSIGNED  NOT NULL,
+    id_artista  INT UNSIGNED  NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_album_artista
+        FOREIGN KEY (id_artista) REFERENCES Artista (id)
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de cruce N:M entre Album y Genero.
+CREATE TABLE IF NOT EXISTS Album_Genero (
+    id_album  INT UNSIGNED NOT NULL,
+    id_genero INT UNSIGNED NOT NULL,
+    PRIMARY KEY (id_album, id_genero),
+    CONSTRAINT fk_album_genero_album
+        FOREIGN KEY (id_album)  REFERENCES Album  (id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_album_genero_genero
+        FOREIGN KEY (id_genero) REFERENCES Genero (id)
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- Persona centraliza credenciales de login para Cliente y Empleado
 -- ============================================================
 
@@ -77,22 +137,33 @@ CREATE TABLE IF NOT EXISTS Cliente (
 
 -- ============================================================
 -- Inventario
--- Stock en Producto (relacion 1:1)
+-- Stock en Producto (relacion 1:1 conceptual — sin entidad separada).
+-- El nombre del producto se construye desde Album + Album_Tipo,
+-- eliminando la dependencia funcional directa en Producto.
+-- uq_producto_album_tipo evita duplicar un album en el mismo formato.
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS Producto (
-    id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-    nombre       VARCHAR(150)  NOT NULL,
-    precio       DECIMAL(10,2) NOT NULL,
-    stock        INT UNSIGNED  NOT NULL DEFAULT 0,
-    id_categoria INT UNSIGNED  NOT NULL,
-    id_proveedor INT UNSIGNED  NOT NULL,
+    id            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    precio        DECIMAL(10,2) NOT NULL,
+    stock         INT UNSIGNED  NOT NULL DEFAULT 0,
+    id_album      INT UNSIGNED  NOT NULL,
+    id_album_tipo INT UNSIGNED  NOT NULL,
+    id_categoria  INT UNSIGNED  NOT NULL,
+    id_proveedor  INT UNSIGNED  NOT NULL,
     PRIMARY KEY (id),
+    UNIQUE KEY uq_producto_album_tipo (id_album, id_album_tipo),
+    CONSTRAINT fk_producto_album
+        FOREIGN KEY (id_album)      REFERENCES Album     (id)
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_producto_album_tipo
+        FOREIGN KEY (id_album_tipo) REFERENCES Album_Tipo (id)
+        ON UPDATE CASCADE,
     CONSTRAINT fk_producto_categoria
-        FOREIGN KEY (id_categoria) REFERENCES Categoria (id)
+        FOREIGN KEY (id_categoria)  REFERENCES Categoria  (id)
         ON UPDATE CASCADE,
     CONSTRAINT fk_producto_proveedor
-        FOREIGN KEY (id_proveedor) REFERENCES Proveedor (id)
+        FOREIGN KEY (id_proveedor)  REFERENCES Proveedor  (id)
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -100,11 +171,17 @@ CREATE TABLE IF NOT EXISTS Producto (
 -- Ventas
 -- ============================================================
 
+-- id_cliente es NULL en ventas presenciales a Consumidor Final (sin cuenta).
+-- nombre_cf y nit_cf capturan los datos del comprador CF en ese caso.
+-- id_empleado es NULL en compras online (el cliente compra solo desde la web).
+-- CHECK garantiza que toda compra tenga al menos un identificador de cliente.
 CREATE TABLE IF NOT EXISTS Compra (
-    id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    id_cliente  INT UNSIGNED NOT NULL,
-    id_empleado INT UNSIGNED NOT NULL,
-    fecha       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    id_cliente  INT UNSIGNED      NULL,
+    id_empleado INT UNSIGNED      NULL,
+    nombre_cf   VARCHAR(200)      NULL,
+    nit_cf      VARCHAR(20)       NULL,
+    fecha       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_compra_cliente
         FOREIGN KEY (id_cliente)  REFERENCES Cliente  (id)
@@ -115,11 +192,9 @@ CREATE TABLE IF NOT EXISTS Compra (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- PK compuesta (id_compra, id_producto).
--- precio_unitario es snapshot historico: se copia desde Producto.precio al registrar
--- la venta. Cambios futuros de precio no alteran el historial. Esto resuelve la
--- dependencia parcial que rompia 2FN en el diseno inicial (subtotal dependia solo
--- de id_producto). El subtotal se calcula en la capa de aplicacion como
--- cantidad * precio_unitario y no se almacena.
+-- precio_unitario es snapshot historico: se copia desde Producto.precio al
+-- registrar la venta. Cambios futuros de precio no alteran el historial.
+-- El subtotal se calcula en la capa de aplicacion como cantidad * precio_unitario.
 CREATE TABLE IF NOT EXISTS DetalleVenta (
     id_compra       INT UNSIGNED  NOT NULL,
     id_producto     INT UNSIGNED  NOT NULL,
@@ -143,44 +218,61 @@ CREATE TABLE IF NOT EXISTS DetalleVenta (
 
 -- Filtrado de ventas por rango de fechas en reportes (diario, mensual, anual).
 -- Sin este indice cada reporte realiza full scan de Compra.
-CREATE INDEX idx_compra_fecha    ON Compra   (fecha);
+CREATE INDEX idx_compra_fecha     ON Compra  (fecha);
 
--- Busqueda de productos por nombre (autocompletado y filtros en la UI de inventario).
--- Sin este indice cada busqueda de texto realiza full scan de Producto.
-CREATE INDEX idx_producto_nombre ON Producto (nombre);
+-- Busqueda y autocompletado de albums por titulo en la UI de inventario.
+-- Reemplaza al anterior idx_producto_nombre, ahora que el nombre
+-- se deriva de Album.titulo + Artista.nombre + Album_Tipo.detalle.
+CREATE INDEX idx_album_titulo     ON Album   (titulo);
+
+-- Filtrado de albums por artista (listado de discografia en la UI).
+-- Sin este indice cada consulta por artista escanea toda la tabla Album.
+CREATE INDEX idx_album_id_artista ON Album   (id_artista);
 
 -- Consultas de alerta de stock bajo en el dashboard (WHERE stock < umbral).
 -- Permite descartar filas sin leer la tabla completa.
-CREATE INDEX idx_producto_stock  ON Producto (stock);
+CREATE INDEX idx_producto_stock   ON Producto (stock);
 
 -- Busqueda de clientes por NIT para emision de facturas y consultas rapidas.
--- NIT no lleva UNIQUE KEY porque "CF" (Consumidor Final) puede repetirse entre clientes.
-CREATE INDEX idx_cliente_NIT     ON Cliente  (NIT);
+-- NIT no lleva UNIQUE KEY porque "CF" (Consumidor Final) puede repetirse.
+CREATE INDEX idx_cliente_NIT      ON Cliente  (NIT);
 
 -- ============================================================
 -- Vista: resumen completo de ventas
 -- Usada por el backend para alimentar el reporte principal de ventas en la UI.
--- Evita reescribir el JOIN de 7 tablas en cada endpoint del backend.
+-- Evita reescribir el JOIN de 9 tablas en cada endpoint del backend.
+-- nombre_artista, titulo_album y tipo_formato se exponen por separado
+-- para que el frontend los combine segun su necesidad de presentacion.
 -- ============================================================
 
+-- JOIN → LEFT JOIN en Cliente/Persona para que las ventas CF (id_cliente NULL)
+-- también aparezcan en el reporte. COALESCE usa nombre_cf/nit_cf como fallback.
 CREATE OR REPLACE VIEW vw_resumen_ventas AS
 SELECT
-    c.id                                AS id_compra,
+    c.id                                              AS id_compra,
     c.fecha,
-    pe_cli.nombre                       AS nombre_cliente,
-    cli.NIT                             AS nit_cliente,
-    pe_emp.nombre                       AS nombre_empleado,
-    p.id                                AS id_producto,
-    p.nombre                            AS nombre_producto,
-    cat.detalle                         AS categoria,
+    cli.id                                            AS id_cliente,
+    COALESCE(pe_cli.nombre, c.nombre_cf)              AS nombre_cliente,
+    COALESCE(c.nit_cf,      cli.NIT)                  AS nit_cliente,
+    pe_emp.nombre                                     AS nombre_empleado,
+    p.id                                              AS id_producto,
+    art.nombre                                        AS nombre_artista,
+    alb.titulo                                        AS titulo_album,
+    alb.anio                                          AS anio_album,
+    alb.url_portada,
+    at.detalle                                        AS tipo_formato,
+    cat.detalle                                       AS categoria,
     dv.cantidad,
     dv.precio_unitario,
-    (dv.cantidad * dv.precio_unitario)  AS subtotal
+    (dv.cantidad * dv.precio_unitario)                AS subtotal
 FROM        Compra       c
-JOIN        Cliente      cli     ON c.id_cliente    = cli.id
-JOIN        Persona      pe_cli  ON cli.id_persona  = pe_cli.id
-JOIN        Empleado     emp     ON c.id_empleado   = emp.id
-JOIN        Persona      pe_emp  ON emp.id_persona  = pe_emp.id
+LEFT JOIN   Cliente      cli     ON c.id_cliente    = cli.id
+LEFT JOIN   Persona      pe_cli  ON cli.id_persona  = pe_cli.id
+LEFT JOIN   Empleado     emp     ON c.id_empleado   = emp.id
+LEFT JOIN   Persona      pe_emp  ON emp.id_persona  = pe_emp.id
 JOIN        DetalleVenta dv      ON c.id            = dv.id_compra
 JOIN        Producto     p       ON dv.id_producto  = p.id
+JOIN        Album        alb     ON p.id_album      = alb.id
+JOIN        Artista      art     ON alb.id_artista  = art.id
+JOIN        Album_Tipo   at      ON p.id_album_tipo = at.id
 JOIN        Categoria    cat     ON p.id_categoria  = cat.id;

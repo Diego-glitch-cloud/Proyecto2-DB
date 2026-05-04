@@ -1,0 +1,167 @@
+/* ── Design Tokens — Direction B "Late-Night Obsidian" ─────────────────── */
+:root {
+  --bg:     #0E0B0C;
+  --paper:  #161113;
+  --ink:    #F2E9DA;
+  --mute:   #8E7E70;
+  --line:   #2A2124;
+  --velvet: #C4222B;
+  --brass:  #C9A86A;
+  --shadow: 0 1px 0 rgba(255,233,200,0.03), 0 30px 60px -30px rgba(0,0,0,0.7);
+  --card-shadow: 0 30px 80px -20px rgba(0,0,0,0.8);
+  --cover-border: rgba(255,233,200,0.12);
+
+  --f-display: 'Bodoni Moda', Georgia, serif;
+  --f-serif:   'Cormorant Garamond', Georgia, serif;
+  --f-ui:      'Inter', system-ui, sans-serif;
+  --f-mono:    'JetBrains Mono', monospace;
+}
+
+[data-theme="light"] {
+  --bg:     #EFE3D0;
+  --paper:  #F7ECD9;
+  --ink:    #1A0B0B;
+  --mute:   #6B4D3E;
+  --line:   #C9B89A;
+  --velvet: #8B0000;
+  --brass:  #8C6A2C;
+  --shadow: 0 12px 28px -16px rgba(26,11,11,0.35);
+  --card-shadow: 0 12px 32px -16px rgba(26,11,11,0.4);
+  --cover-border: rgba(26,11,11,0.15);
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; }
+
+body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-ui);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 220ms ease, color 220ms ease;
+}
+
+[data-theme="light"] body {
+  background:
+    radial-gradient(900px 500px at 90% -10%, rgba(139,0,0,0.08), transparent 60%),
+    radial-gradient(700px 500px at -10% 110%, rgba(140,106,44,0.12), transparent 60%),
+    #EFE3D0;
+  background-attachment: fixed;
+}
+
+#app { height: 100%; }
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+input, textarea { font-family: inherit; }
+img { display: block; max-width: 100%; }
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--line); }
+
+/* ── Typography helpers ─────────────────────────────────────────────────── */
+.f-display { font-family: var(--f-display); }
+.f-serif   { font-family: var(--f-serif);   }
+.f-mono    { font-family: var(--f-mono);    }
+
+/* eyebrow label — JetBrains Mono, all caps */
+.eyebrow {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.eyebrow.brass  { color: var(--brass);  }
+.eyebrow.velvet { color: var(--velvet); }
+
+/* ── Layout helpers ─────────────────────────────────────────────────────── */
+.hairline     { border: 1px solid var(--line); }
+.hairline-b   { border-bottom: 1px solid var(--line); }
+.hairline-t   { border-top: 1px solid var(--line); }
+.hairline-r   { border-right: 1px solid var(--line); }
+.dashed-b     { border-bottom: 1px dashed var(--line); }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 22px;
+  font-family: var(--f-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+
+.btn-primary {
+  background: var(--velvet);
+  color: #F8EFD8;
+  border-color: var(--velvet);
+}
+.btn-primary:hover { filter: brightness(1.12); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+.btn-outline:hover { border-color: var(--ink); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+.btn-ghost:hover { background: rgba(var(--ink-rgb, 242,233,218), 0.04); }
+
+.btn-brass {
+  background: transparent;
+  color: var(--brass);
+  border-color: var(--brass);
+}
+
+/* ── Form fields ────────────────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.field label {
+  font-family: var(--f-mono);
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.field input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--f-serif);
+  font-size: 20px;
+  color: var(--ink);
+  padding: 4px 0;
+  line-height: 1.4;
+}
+
+.field input::placeholder { color: var(--mute); opacity: 0.5; }

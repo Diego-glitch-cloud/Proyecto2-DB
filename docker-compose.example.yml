@@ -22,7 +22,6 @@ services:
 
 # --- TEMPORAL: adminer para verificacion de la DB durante evaluacion ----------
 # Eliminar este servicio cuando ya no sea necesario para revision academica.
-# El desarrollador tiene Adminer corriendo en un contenedor propio.
   adminer:
     image: adminer:latest
     restart: unless-stopped
@@ -32,6 +31,27 @@ services:
       db:
         condition: service_healthy
 # ------------------------------------------------------------------------------
+
+  backend:
+    build: ./app/backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: ${BACKEND_PORT}
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./app/frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT}:80"
+    depends_on:
+      - backend
 
 volumes:
   mariadb_data:
