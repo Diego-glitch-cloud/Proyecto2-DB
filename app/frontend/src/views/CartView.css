@@ -1,0 +1,29 @@
+.cart-root { display:flex; flex-direction:column; height:100vh; overflow:hidden; background:var(--bg); }
+.cart-nav { display:flex; align-items:center; justify-content:space-between; height:58px; padding:0 24px; background:var(--paper); flex-shrink:0; }
+.back { font-size:10px; letter-spacing:.22em; color:var(--mute); text-decoration:none; }
+.back:hover { color:var(--ink); }
+.empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.cart-grid { display:grid; grid-template-columns:1fr 380px; flex:1; overflow:hidden; }
+.items-col { overflow-y:auto; padding:28px 32px; }
+.item { display:flex; align-items:center; gap:16px; padding:16px 0; }
+.item-info { flex:1; display:flex; flex-direction:column; }
+.item-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.qty-ctrl { display:flex; align-items:center; gap:10px; border:1px solid var(--line); padding:3px 10px; }
+.qty-ctrl button { color:var(--mute); background:none; border:none; font-size:14px; cursor:pointer; }
+.remove-btn { color:var(--mute); background:none; border:none; cursor:pointer; font-size:9px; }
+.remove-btn:hover { color:var(--velvet); }
+.checkout-col { display:flex; flex-direction:column; overflow-y:auto; background:var(--paper); }
+.checkout-header { padding:20px 24px; }
+.checkout-body { padding:20px 24px; display:flex; flex-direction:column; gap:18px; }
+.perfil-info { padding-bottom:14px; border-bottom:1px dashed var(--line); }
+.option-row { display:flex; align-items:center; gap:10px; cursor:pointer; padding:8px 0; }
+.checkbox { width:14px; height:14px; cursor:pointer; accent-color:var(--velvet); }
+.datos-source { display:flex; flex-direction:column; }
+.confirm-item { display:flex; justify-content:space-between; gap:12px; color:var(--mute); font-size:13px; padding:4px 0; text-transform:none; letter-spacing:0; font-weight:400; }
+.total-box { display:flex; flex-direction:column; gap:10px; padding-top:14px; }
+.total-row { display:flex; justify-content:space-between; align-items:center; }
+.total-final { padding-top:10px; border-top:1px solid var(--line); }
+.confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200; display:flex; align-items:center; justify-content:center; padding:24px; }
+.confirm-card { background:var(--paper); padding:36px; max-width:500px; width:100%; display:flex; flex-direction:column; animation: fadeIn 200ms ease; }
+.confirm-items { display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

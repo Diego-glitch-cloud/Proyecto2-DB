@@ -6,10 +6,10 @@ import { useAuth } from './AuthContext'
 import LoginView from './views/LoginView'
 import CatalogView from './views/CatalogView'
 import NotFoundView from './views/NotFoundView'
+import CartView from './views/CartView'
+import ProfileView from './views/ProfileView'
 
-// Componentes temporales (Views en Paso 13+)
-const CartView = () => <div>Vista Carrito (Test)</div>
-const ProfileView = () => <div>Vista Perfil (Test)</div>
+// Componentes temporales (Views en Paso 14+)
 const AdminView = () => <div>Vista Admin (Test)</div>
 const InventarioView = () => <div>Vista Inventario (Test)</div>
 const VentasView = () => <div>Vista Ventas (Test)</div>
