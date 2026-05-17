@@ -15,22 +15,10 @@ services:
     ports:
       - "${DB_PORT}:3306"
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       interval: 10s
       timeout: 5s
       retries: 5
-
-# --- TEMPORAL: adminer para verificacion de la DB durante evaluacion ----------
-# Eliminar este servicio cuando ya no sea necesario para revision academica.
-  adminer:
-    image: adminer:latest
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    depends_on:
-      db:
-        condition: service_healthy
-# ------------------------------------------------------------------------------
 
   backend:
     build: ./app/backend
