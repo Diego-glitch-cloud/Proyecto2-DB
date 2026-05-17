@@ -1,47 +1,3 @@
-<template>
-  <div class="card" :class="{ compact }">
-    <div class="card-cover" @click="$emit('add', producto)">
-      <AlbumCover :album="albumData" :size="compact ? 130 : 220" />
-      <span v-if="isNew" class="badge-new eyebrow">NUEVO</span>
-      <button class="btn-plus" title="Agregar a la bolsa">+</button>
-    </div>
-    <div class="card-body">
-      <p class="card-title" :class="compact ? 'ct-sm' : 'ct-md'">
-        {{ producto.titulo_album || producto.titulo }}
-      </p>
-      <p class="card-meta eyebrow">{{ producto.artista }} · {{ producto.anio_album || producto.anio }}</p>
-      <div class="card-footer">
-        <FormatChip :formato="producto.tipo_formato || producto.formato || 'Vinilo'" />
-        <span class="card-price" :class="compact ? 'cp-sm' : 'cp-md'">
-          Q {{ Number(producto.precio).toLocaleString('es-GT') }}
-        </span>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script setup>
-import { computed } from 'vue'
-import AlbumCover from './AlbumCover.vue'
-import FormatChip from './FormatChip.vue'
-
-const props = defineProps({
-  producto: { type: Object, required: true },
-  compact:  { type: Boolean, default: false },
-  isNew:    { type: Boolean, default: false }
-})
-
-defineEmits(['add'])
-
-const albumData = computed(() => ({
-  titulo:      props.producto.titulo_album || props.producto.titulo,
-  artista:     props.producto.artista,
-  anio:        props.producto.anio_album   || props.producto.anio,
-  url_portada: props.producto.url_portada
-}))
-</script>
-
-<style scoped>
 .card {
   display: flex;
   flex-direction: column;
@@ -124,4 +80,3 @@ const albumData = computed(() => ({
 .card-price { font-family: var(--f-display); color: var(--brass); }
 .cp-md { font-size: 20px; }
 .cp-sm { font-size: 16px; }
-</style>

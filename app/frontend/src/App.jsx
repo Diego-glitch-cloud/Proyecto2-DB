@@ -7,6 +7,9 @@ import { useWishlist } from './WishlistContext'
 import { ThemeToggle } from './components/ThemeToggle'
 import { BLogo } from './components/BLogo'
 import { FormatChip } from './components/FormatChip'
+import { AlbumCard } from './components/AlbumCard'
+import { PosterStrip } from './components/PosterStrip'
+import { FeaturedCarousel } from './components/FeaturedCarousel'
 
 function App() {
   const [status, setStatus] = useState('Probando conexión con el backend...')
@@ -65,6 +68,19 @@ function App() {
           <FormatChip formato="Vinilo" />
           <FormatChip formato="CD" size="lg" />
         </div>
+      </div>
+
+      <div style={{ border: '1px solid #ccc', padding: '1rem', marginTop: '1rem' }}>
+        <h3>Componentes Musicales (Paso 10)</h3>
+        <PosterStrip left="LANZAMIENTOS" right="VER TODOS" />
+        <div style={{ margin: '1rem 0' }}>
+          <AlbumCard 
+            producto={{ titulo_album: 'Random Access Memories', artista: 'Daft Punk', anio_album: 2013, precio: 250, tipo_formato: 'Vinilo' }} 
+            isNew={true} 
+            onAdd={(p) => add(p)} 
+          />
+        </div>
+        <FeaturedCarousel onAdd={(p) => add(p)} />
       </div>
     </div>
   )
