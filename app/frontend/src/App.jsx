@@ -8,11 +8,9 @@ import CatalogView from './views/CatalogView'
 import NotFoundView from './views/NotFoundView'
 import CartView from './views/CartView'
 import ProfileView from './views/ProfileView'
-
-// Componentes temporales (Views en Paso 14+)
-const AdminView = () => <div>Vista Admin (Test)</div>
-const InventarioView = () => <div>Vista Inventario (Test)</div>
-const VentasView = () => <div>Vista Ventas (Test)</div>
+import AdminView from './views/AdminView'
+import InventarioView from './views/InventarioView'
+import VentasView from './views/VentasView'
 
 function App() {
   return (
