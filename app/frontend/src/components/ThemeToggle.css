@@ -1,0 +1,12 @@
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px 0;
+}
+.theme-eyebrow { color: var(--mute); transition: color 150ms; }
+.theme-active { color: var(--ink); }
+.theme-sep { font-family: var(--f-mono); font-size: 9px; color: var(--line); }

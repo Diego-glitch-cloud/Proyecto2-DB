@@ -4,6 +4,9 @@ import { useTheme } from './ThemeContext'
 import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
 import { useWishlist } from './WishlistContext'
+import { ThemeToggle } from './components/ThemeToggle'
+import { BLogo } from './components/BLogo'
+import { FormatChip } from './components/FormatChip'
 
 function App() {
   const [status, setStatus] = useState('Probando conexión con el backend...')
@@ -50,6 +53,18 @@ function App() {
             Cerrar Sesión
           </button>
         )}
+      </div>
+
+      <div style={{ border: '1px solid #ccc', padding: '1rem', marginTop: '1rem' }}>
+        <h3>Componentes Genéricos (Paso 9)</h3>
+        <ThemeToggle />
+        <div style={{ margin: '1rem 0' }}>
+          <BLogo size={24} caption="TEST CAPTION" />
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <FormatChip formato="Vinilo" />
+          <FormatChip formato="CD" size="lg" />
+        </div>
       </div>
     </div>
   )
