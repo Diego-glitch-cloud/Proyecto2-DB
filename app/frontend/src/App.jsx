@@ -10,7 +10,7 @@ function App() {
     // Probamos el endpoint público
     api.get('/stats/publico')
       .then(res => {
-        setStatus('¡Conexión exitosa! Productos en base de datos: ' + res.data.totalProductos)
+        setStatus('¡Conexión exitosa! Productos en base de datos: ' + res.data.total_productos)
       })
       .catch(err => {
         setStatus('Error de conexión: ' + err.message)
