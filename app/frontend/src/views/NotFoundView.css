@@ -1,17 +1,3 @@
-<template>
-  <div class="nf-root">
-    <div class="nf-inner">
-      <span class="nf-code f-display">404</span>
-      <h1 class="f-display nf-title">Pagina<em class="accent">no encontrada.</em></h1>
-      <p class="f-serif nf-sub">Esta pista no existe en nuestro catálogo.</p>
-      <RouterLink to="/" class="btn btn-primary" style="height:52px;margin-top:32px">
-        ← VOLVER AL CATÁLOGO
-      </RouterLink>
-    </div>
-  </div>
-</template>
-
-<style scoped>
 .nf-root {
   height: 100vh;
   display: flex;
@@ -47,4 +33,3 @@
   color: var(--mute);
   position: relative;
 }
-</style>
