@@ -27,9 +27,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(userData));
     
-    // TODO (Paso 8): Cargar wishlist para el usuario payload.id
-    // useWishlistStore().loadForUser(payload.id)
-    
     return data.rol;
   };
 
@@ -38,8 +35,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    // TODO (Paso 8): Limpiar wishlist del usuario actual
-    // useWishlistStore().clearForCurrentUser()
     
     setToken(null);
     setUser(null);
