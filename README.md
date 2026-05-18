@@ -1,5 +1,9 @@
 # Music 4 U — Tienda Musical
 
+### NOTA
+Esta rama es la correspondiente al proyecto 2 de Base de Datos, elaborado con vue
+Para poder ver el Proyecto 2 de Sistemas y tecnologías web, visitar la rama PY2-WEB
+
 **Proyecto 2 · cc3088 Bases de Datos 1**  
 Universidad del Valle de Guatemala · Ciclo 1, 2026  
 **Autor:** Diego Andre Calderón Salazar — Carné 241263  
