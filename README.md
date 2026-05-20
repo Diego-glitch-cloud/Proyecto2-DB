@@ -12,6 +12,34 @@ Universidad del Valle de Guatemala · Ciclo 1, 2026
 
 ---
 
+## Demo desplegada
+
+El proyecto está corriendo en el servidor compartido del curso.
+
+| Servicio | URL |
+|----------|-----|
+| **Frontend (aplicación)** | http://35.255.29.219:8081 |
+| **Backend (API REST)** | http://35.255.29.219:3002 |
+| **Health check** | http://35.255.29.219:3002/api/health-db |
+
+### Puertos en el servidor
+
+| Servicio | Puerto host | Puerto interno |
+|----------|-------------|----------------|
+| Frontend (nginx) | `8081` | `80` |
+| Backend (Fastify) | `3002` | `3002` |
+| Base de datos (MariaDB) | `3306` | `3306` |
+
+### Credenciales de prueba
+
+| Rol | Correo | Contraseña |
+|-----|--------|------------|
+| Admin | `diego.admin@tiendamusical.gt` | `secret` |
+| Vendedor | `ana.lopez@tiendamusical.gt` | `secret` |
+| Cliente | `javier.alvarado@gmail.com` | `secret` |
+
+---
+
 ## Descripción general
 
 Music 4 U es un sistema de gestión de inventario y ventas para una tienda de discos físicos (vinilos, CDs, cassettes y ediciones limitadas). La aplicación implementa una arquitectura cliente-servidor con API REST, base de datos relacional MariaDB y frontend en React 18.
